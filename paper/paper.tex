@@ -220,6 +220,11 @@ Towards this effort, data was collected for each subpopulation and each method. 
 
 \subsection{Estimation}
 
+\begin{figure}
+\includegraphics[width=0.8\textwidth]{../images/qhat}
+\caption{The $\hat q$ estimated by the MLM method with $\kappa=.1$.  Here we find that the calibration is largely diagonal.  That is, for the most part, if a cell-type was designated as a particular type according to one method, we expect it to be designated by the same type in the other method.  However, there are some striking deviations from diagonality.  Note that the number of cell-types is not exactly the same between the two methods, but this provides no barrier to implementin the MLM method.   The final row and column are in some sense ``miscellaneous'' and can be disregarded to some extent.\label{fig:allenout}}
+\end{figure}
+
 The first step of the Markov Link Method was simply to estimate the calibration $q^*$.  Taking $\kappa=.1$, we obtained a calibration found in Figure \ref{fig:allenout}.  While this result seemed to generally suggest the methods were well-calibrated, there are some striking divergences.  For example, this calibration suggests a that celltypes designated as celltype ``10'' in one method are actually quite likely to be designated as celltype ``7'' in the other technique.  Both celltypes are associated with similar neuronal types with high expression of somatostatin.  However, type ``10'' is associated with genes such as `C1ql3,' `Chodl,'  and `Nts,' whereas type ``7'' is associated with `Etv1' and `Myh8.'  
 
 Notice that there are several fundamentally different reasons we could see these kinds of miscalibrations:
