@@ -1,0 +1,10 @@
+*.fls
+*__pycache__*
+*.bbl
+*.ipynb_checkpoints
+*.log
+*.out
+*.aux
+*junk*
+*.fdb_latexmk
+*.blg
