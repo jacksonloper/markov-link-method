@@ -6,6 +6,7 @@
 \DeclareMathOperator*{\tr}{tr}
 
 \newcommand{\UN}[1]{\ensuremath{\left|#1\right|_\infty}}
+\newcommand{\TV}[1]{\ensuremath{\left\Vert #1\right\Vert_{TV}}}
 \newcommand{\EN}[1]{\ensuremath{\left|#1\right|}}
 \newcommand{\kldiv}[2]{\ensuremath{D\left(#1||#2\right)}}
 
@@ -21,7 +22,7 @@
 \author{Jackson Loper, Osnat Penn, Trygve Bakken, David Blei, Liam Paninski}
 
 \usepackage{amsthm}
-\newtheorem*{thm}{Theorem}
+\newtheorem{thm}{Theorem}
 \newtheorem{lem}{Lemma}
 \newtheorem{conj}{Conjecture}
 
@@ -33,41 +34,35 @@
 \maketitle
 
 \begin{abstract}
-A proliferation of new experimental tools has left a serious gap: calibration. Two thermometers can be calibrated against each other by simply measuring the same bodies of water with both thermometers, but the problem is much harder for many modern tools.  One common problem is that we do not have measurements from the same ``body of water'' for both tools.  We propose the Markov Link Method (MLM) as a way to overcome this difficulty.   This method produces consistent estimators that tightly bound the calibration, i.e. the conditional distribution of one tool's measurement given another tool's measurement. It achieves this without any measurement data from both tools applied to the same ``bodies of water.'' Moreover, MLM makes zero assumptions about what calibrations we might expect to see, instead applying a subpopulation-based conditional independence assumption.   We evaluate MLM on a pair of single-cell RNA techniques, obtaining a calibration between the tools.
+A proliferation of new experimental tools has left a serious gap: calibration. Two thermometers can be calibrated against each other by simply measuring the same bodies of water with both thermometers, but the problem is much harder for many modern tools.  One common problem is that we do not have measurements from the same ``body of water'' for both tools.  We propose the Markov Link Method (MLM) as a way to overcome this difficulty.   This method produces consistent estimators that tightly bound the calibration, i.e. the conditional distribution of one tool's measurement given another tool's measurement. It achieves this without any measurement data from both tools applied to the same ``bodies of water.'' Moreover, MLM can be applied even if we cannot make any assumptions about what calibrations we might expect to see; instead, it uses a subpopulation-based conditional independence assumption.   We evaluate MLM on a pair of single-cell RNA techniques, obtaining a calibration between the tools.
 \end{abstract}
 
 The modern setting is rife with experimental measurement tools, and it can be very frustrating to understand how the output of these tools relate to one another.  This problem is known as ``calibration'' or ``zeroing.''  A calibration tells us what readings we should expect from one tool, given the reading we obtained from another tool.   Calibration additionally must give uncertainty bounds for how much we can trust those expectations  \cite{bipm2008international}.  Calibration between measurement tools allows us to combine experimental results from different labs and different methodologies into larger scientific theories.  
 
-Formally, a calibration is simply a conditional distribution.  We will denote it by $q^*(y|x)$.  As input, this conditional distribution takes the measurement result $x$ obtained from one tool on a particular specimen.  As output, it yields the probability of obtaining result $y$ from a second tool applied to measure the same specimen.  One way to learn the calibration is to measure the same specimens under both tools.  We call this ``joint measurement.''  Unfortunately, calibrations are often required even when joint measurement is unavailable.  For example, if the measurement tool significantly alters the specimen being measured, joint measurement is simply impossible.  In other cases, it may be expensive or impractical.
+Formally, a calibration is simply a conditional distribution.  We will denote it by $q^*(y|x)$.  Let us say we obtain measurement result $x$ from one tool on a particular specimen.  The number $q(y|x)$ indicates the probability of obtaining result $y$ from a second tool applied to measure the same specimen.  One way to learn the calibration is to measure the same specimens with both tools.  We call this ``joint measurement.''  Unfortunately, calibrations are often required even when joint measurement is unavailable.  For example, if the measurement tool significantly alters the specimen being measured, joint measurement is simply impossible.  In other cases, it may be expensive or impractical.
 
-We here propose the Markov Link Method (MLM) to estimate calibrations between tools.  The MLM can be trained without any joint measurement.  The key idea is to use multiple subpopulations of specimens.  If each subpopulation captures a different slice of the overall population, we can obtain tight bounds on the true calibration.  This is true even if each subpopulation is highly heterogeneous.  By integrating information from all the subpopulations we can make rigorous deductions about what the calibration might be.  MLM also gives suggestions about which further subpopulations might be helpful to study in order to further refine our knowledge of the true calibration.  The method can also be naturally extended to calibration distributions among many tools.
+We here propose the Markov Link Method (MLM) to estimate calibrations between tools.  The MLM can be applied without any joint measurement.  The key idea is to use multiple subpopulations of specimens.  If each subpopulation captures a different slice of the overall population, we can obtain tight bounds on the true calibration.  This is true even if each subpopulation is highly heterogeneous.  By integrating information from all the subpopulations we can make rigorous deductions about what the calibration might be.  MLM also gives suggestions about which further subpopulations might be helpful to study in order to further refine our knowledge of the true calibration.  
 
-\section{Relation to prior work}
-
-Our main goal is to achieve calibration without joint measurement.  The main obstacle is what is known in the statistics world as an `identifiability problem.'  Due to this problem, we simply \emph{cannot} directly estimate the calibration that we are interested in.  The calibration is simply not ``identifiable.''  Nonetheless, all is not lost.  Our main contribution is to show that one can bound the extent of this identifiability problem.  In short, the fundamental problem cannot generally be vanquished, but we can put it in its place.  
-
-Our identifiability analysis stands on the shoulders of a long history of turning probabilistic assumptions into bounds on unidentifiable parameters.  The core idea of the MLM is to take an assumption (the `Markov Link assumption,' which we will define shortly) and use it to place bounds on an unidentifiable quantity (namely the calibration $q^*$).  When these bounds are fairly tight on all sides, we see that much can be learned even though what we want isn't identifiable.  Much of the prior literature in this kind of direction comes from research into causality.  For example, in \cite{bonet2001instrumentality} Bonet uses polytopes not unlike the ones seen here to explore whether a variable can be used as an instrument.  The famous Clauser-Horne-Shimony-Holt inequality was designed to help answer causality questions in quantum physics, but it also sheds light on what distributions are consistent with certain assumptions \cite{clauser1969proposed}.  Indeed the physics literature has contributed many key inequalities (cf. \cite{chaves2014inferring}, \cite{kela2017semidefinite}, and the references therein).  Perhaps the closest work to this one would be \cite{makarov1982estimates}, which used two marginal distributions to get bounds on a property of the joint distribution (namely the distribution of the sum).  We advance this approach to a more general-purpose technique, both by using many subpopulations to refine our estimates and by considering the entire space of possible joint distributions instead of simply a particular aspect of the joint.  
-
-It is perhaps worth mentioning that the actual theorem presented here has probably been derived before (although we did not find it in our review of the literature).  Other results in the same flavor as the one presented here might also find a practical use for modern problems.  There is a treasure-trove of ideas in the causality literature; this wealth has not yet been brought fully to bear on the challenging and important problems of calibration for modern experimental modalities.  Our primary intention with this article is to bring attention to the practical utility of these kinds of result.
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The Markov Link Method assumption}
 
-To make our ideas rigorous, let us develop a little bit of notation.  Let us say we are considering the specimens of a large population.  For example, each specimen in the large population might be a human cell.  Each specimen could also be be a piece of metal which needs to be tested.  We will assume there are three basic properties of interest for each specimen $i$:
+The MLM is only applicable if a certain assumption is met.  In this section we will articulate this assumption as clearly as possible.  Let us say we are considering the specimens of a large population.  For example, each specimen in the large population might be a human cell.  Each specimen could also be be a piece of metal which needs to be tested.  We will assume there are three basic properties of interest for each specimen $i$:
 
 \begin{enumerate}
-\item $\ell_i$, the subpopulation.  We assume that the overall population can be split into subpopulations of interest.  For example, we could define subpopulations by looking at cells in different parts of the body or cells with different sizes.  
+\item $\ell_i$, the subpopulation.  We assume that we can identify a variety of these subpopulations.  They are not required to be disjoint subpopulations; it is only necessary that each subpopulation captures a different slice of the overall population.  For example, we could define subpopulations by looking at cells in different parts of the body or cells with different sizes.  
 \item $X_i$, the result of measuring a specimen with tool I.  For example, perhaps tool I takes a picture of the cell with a destructive electron microscopy method.
-\item $Y_i$, the result of measuinrg a specimen with tool II.  For example, perhaps tool II measures the RNA expression of the cell with a destructive sequencing method.
+\item $Y_i$, the result of measuring a specimen with tool II.  For example, perhaps tool II measures the RNA expression of the cell with a destructive sequencing method.
 \end{enumerate}
 
-We here consider the case that ``joint measurement'' is impossible or impractical.  In terms of the notation above, that means that for any given specimen we can either observe $\ell_i, X_i$ or $\ell_i,Y_i$.  We can never observe $\ell_i,X_i,Y_i$ for any specimen $i$.  Despite this obstacle, we would like to estimate the conditional distribution $q^*(y|x)\triangleq \mathbb{P}(Y_i=y|X_i=x)$.  To make this estimation at all possible, we need some kind of assumption.
+We here consider the case that ``joint measurement'' is impossible or impractical.  In terms of the notation above, that means that for any given specimen we can either observe $\ell_i, X_i$ or $\ell_i,Y_i$.  We can never observe $\ell_i,X_i,Y_i$ for any specimen $i$.  We would like to estimate as much as possible about the distribution of $X,Y|\ell$.  In this paper, we will consider the case that this estimation is facilitated by an additional assumption:
 
 \figgy{
 \hfill{}\figgygr{.7}{../images/bigpicture}\hfill{}
 \caption{We consider the case that for each specimen there are two ways we might measure it.  We divide the specimens into two groups.  The specimens on the left are measured with technique I and the specimens on the right are measured with technique II.  In the end, we are left wondering: what would have happened if we had measured the specimens on the left with technique II?  Or what if we had measured the specimens on the right with technique I?  The Markov Link Method gives a way to answer this problem using a subpopulation analysis.   \label{fig:bigpicture}}
 }
-
-The key assumption of the Markov Link Method is a conditional independence: that $\mathbb{P}(Y|X,\ell)$ is independent of $\ell$, i.e. 
 
 \begin{center}
 \fbox{\parbox[c]{4in}{
@@ -79,303 +74,319 @@ The key assumption of the Markov Link Method is a conditional independence: that
 }}
 \end{center}
 
-Intuitively, this signifies that the manner in which $X$ predicts $Y$ would be the same for each subpopulation.  If this assumption is not met, then the method presented here is not applicable.  The validity of these assumptions for a given situation should be closely contemplated.  
+Intuitively, this signifies that the manner in which $X$ predicts $Y$ would be the same for each subpopulation.  In the language of statistics, the assumption is that the variable $X$ is `sufficient' for $\ell$.  If this assumption is not met, then the method presented here is not applicable.  If it \emph{is} met, it opens the door for new methods to estimate three important objects:
 
-Let us consider a few real-world examples where this assumption may apply.
+\begin{itemize} 
+    \item The calibration $q^*(y|x)$ 
+    \item The distribution of tool-I measurement values found in each subpopulation, $p^*(x|\ell)$ 
+    \item The distribution of tool-II measurement values found in each subpopulation,  $h^*(y|\ell)$.  
+\end{itemize}
+
+Under the MLM assumption, it is straightforward to see that these three objects are all bound together by the formula $h^*(y|\ell) = \sum_x p^*(x|\ell)q^*(y|x)$ for each $\ell,y$.  Using this equation, we will see that it is possible to estimate properties of the calibration $q^*$ even without access to joint measurement.  It also makes it possible to perform more efficient estimation of $h^*$.  Theoretically we could also get more efficient estimation of $p^*$, but we did not find plausible cases where this actually occured.  
+
+\figgy{
+\hfill{}\figgygr{.7}{../images/plate}\hfill{}
+\caption{Another way to articulate the Markov Link Method is to look at the graphical model associated with the MLM assumption.  This reveals that we have two kinds of data.  In one case (above), we can observe $\ell,X$, but $Y$ is hidden.  For other kinds of data (below) we can observe $\ell,Y$, but $X$ is hidden.  All of this data is joined by the unknown parameters $p,q$.  Here $p$ indicates the distribution of tool-I measurement values from each subpopulation, and $q$ indicates the calibration.  Our task is to use these different kinds of data to determine the parameters $p,q$ as best as we can.  Once these parameters are known, notice that distribution of tool-II measurement values for each subpopulation, which we denote $h$, can be determined immediately using the Markov Link Assumption: $h^*(y|\ell) = \sum_x p^*(x|\ell)q^*(y|x)$.  \label{fig:platediag}}
+}
+
+\section{Examples where the Markov Link Method may apply}
+
+The validity of the Markov Link Method assumption for a given situation should be closely contemplated.  Let us consider a few real-world examples where this assumption may apply.
 
 \begin{itemize}
-    \item Quality control for manufacturing.   The surest way to test the reliability of a part is to construct a machine that pushes the part until it breaks.  However, how can we test the reliability of the machine that performs the test?  In each test run there will be some variability induced by the machine itself, which induces a measurement error.  In practice, some kind of assumptions about part homogeneity are used to approximate this error (cf.\ \cite{de2005gauge}).  However, if we have two testing machines we can use the MLM to obtain a calibration between the machines, even though we can never test the same part with both machines.  This enables us to bound the overall measurement error.  In this case, $\ell$ might indicate the type of a part being tested, $X$ would indicate the reliability of a part as measured by one machine, and $Y$ would indicate the reliability of a part as measured by another machine.  If the error in machine $Y$ is not correlated to the part type $\ell$, then the MLM assumption certainly holds.  Even if the error is correlated, the MLM assumption may still hold.  For example, imagine that the $Y$ error is correlated with the absolute reliability of the part, this may pose no problem if that reliability is adequately measured by $X$.  
+    \item Quality control for manufacturing.   One way to test the reliability of a part is to construct a machine that pushes the part until it breaks.  However, how can we test the reliability of the machine that performs the test?  In each test run there will be some variability induced by the machine itself, which induces a measurement error.  In practice, some kind of assumptions about part homogeneity are used to approximate this error (cf.\ \cite{de2005gauge}).  However, if we have two testing machines we can use the MLM to obtain a calibration between the machines, even though we can never test the same part with both machines.  This enables us to bound the overall measurement error.  In this case, $\ell$ might indicate the type of a part being tested, $X$ would indicate the reliability of a part as measured by one machine, and $Y$ would indicate the reliability of a part as measured by another machine.  If the error in machine $Y$ is not correlated to the part type $\ell$, then the MLM assumption certainly holds.  Even if the error is correlated, the MLM assumption may still hold.  For example, imagine that the $Y$ error is correlated with the absolute reliability of the part, this may pose no problem if that reliability is adequately measured by $X$.  
 
     \item Combining knowledge across experimental modalities: morphology and transcriptomics.  There are different ways to think about the different types of cells in an organism.  A traditional approach is to classify cells based on what they look like (cf.\ \cite{steinman1973identification,bloomfield1982physiological}).  A more modern approach is to assay the cell's transcriptome (cf.\ \citep{tasic2017shared}).  Unfortunately, modern high-resolution cell photography and single-cell sequencing technologies are both destructive.  As a result, we can't always get both kinds of data for the same specimens.  For cells native to regions full of diverse cell-types, it is thus quite hard to grasp the correspondence between these different kinds of classification systems.  The result is two completely independent classifications of cells, one for each way of looking at the cell.  MLM allows us to estimate the relationship between those two classification systems, yielding a wholistic understanding of the different types of cells.  In this case, $\ell$ might indicate some side information such as where in the body the cell was found, $X$ would indicate a detailed classification of the cell according to its transcriptomics, and $Y$ would indicate a coarser classification of a cell according to its morphology.  We expect that cell morphology is largely a function of cell transcriptomics.  Thus, as long as the $X$ measurement is sufficiently detailed, we expect that any correlations between $Y$ and $\ell$ would be explained by $X$.  That is, the MLM assumption holds.  
+
+    \item Radiometric calibration.  Different cameras measure light differently.  For example, each camera has different lens distortions.  Different cameras also have different ways of transforming photon counts into digital information.   Fortunately, joint measurement is generally possible with cameras; simply take a picture of the same object with both cameras.  Unfortunately, an adequate amount of joint measurement is sometimes hard to come by.  For example, with expensive astronomy-grade settings, it can be difficult to balance the need for calibration with the total amount of the sky one wants to cover (cf.\ \cite{padmanabhan2008improved}). For example, instead of requiring different cameras to take pictures of exactly the same portion of sky at exactly the same time, the subpopulations $\ell$ could represent portions of the sky.  Various conditions may cause these portions of the sky to appear differently over time, but if we assume this variability is independent of the calibration itself, the MLM assumption may apply.  
  
     \item Cancer treatment efficacy prediction.  Starting from in-vivo human cancers, many cell-lines have been cultured over the years.  These cell cultures live indefinitely on plates.  Many experiments have been performed to see how these cancer cells respond to treatment.  However, if a treatment works on a particular cultured cell-line, what can we say about whether a treatment will work on an actual in-vivo cancer inside a patient?  Coarse side-information such as original cancer location is often available for both in-vivo and cultured cells, but this is often a surprisingly weak signal.  Cell transcriptomes provides much more specific information about the cancer, and thus, in theory, what treatments might be appropriate (cf.\ \cite{cieslik2018cancer}).  However, we know that cultured cell-lines look quite different from in-vivo cells (cf. \cite{imamura2015comparison,haibe2013inconsistency}).   These cell cultures are subject to quite different pressures, due to the fact that they survive on a plate instead of inside a human being.  The Markov Link method can leverage the common side-information together with separate transcriptome information to understand the correspondence between in-vivo and cultured cells.  If a particular drug is effective on a particular cultured cell-line, we can then look at the corresponding in-vivo transcriptomic profile.  If we find human cancers that match this profile, they might be good candidates for further research using this particular drug.  Here $\ell$ might indicate cancer location, $X$ might indicate transcriptomic expression of cultured cells, and $Y$ might indicate transcriptomic expression of in-vivo cells.  As the transcriptomic expression is much more informative than the cancer location, it is plausible that $X$ might be sufficient to explain any correlations between $\ell$ and $Y$.  Thus the MLM assumption may hold.
 
     \item Text/image correspondence.  Automatic image captioning is an ongoing effort in machine learning (cf.\ \cite{srivastava2018survey}).  There are three types of data available to help develop such algorithms: text-only data, image-only data, and paired-text-and-image data.  Obviously the last kind is the most useful for automatic image captioning, but there is much less of it.  The Markov Link Method suggests one way to use the more plentiful text-only and image-only data.  We can first apply classic machine learning techniques to get coarse labels for both kinds of data.  Using this side-information to identify subpopulations, the MLM can then deduce a fine-grained correspondence between text and images by combining information from across all the subpopulations.  Here $\ell$ would indicate coarse labels such as ``cat'' or ``street scene.''  These labels could be derived from either images or text and can be trained in a supervised fashion.  $X$ would indicate the image and $Y$ would indicate a caption.  If caption is largely determined by the picture $X$, the MLM assumption may hold.  
 
-    \item Replication crisis and lab effects.  Replicating a published study is not always an easy thing to do.  This difficulty is commonly attributed to selective publication bias, bad design, poor description of methods, and even outright fraud \cite{baker2016reproducibility}.  A calibration would allow us to understand this problem in detail.  If two labs perform identical experiments and get different data, that does not mean we need to throw out both datasets.  Instead, we can use MLM to calibrate the tools.  Once the tools are properly calibrated, we can combine both datasets.  Unlike other tools to deal with lab or batch effects (e.g. \cite{crow2018characterizing,johnson2007adjusting}), MLM makes zero assumptions about what calibrations we might expect.  In this case, $\ell$ would indicate subpopulations which both labs could access.  For example, we can take several batches of mice; for each batch we can send half to one lab and half to the other lab.  $X$ will the indicate the full results from each specimen examined in one lab and $Y$ coarser information from specimens examined in the other.  If the $X$ data is sufficiently detailed, the MLM assumption may hold.  
+    \item Replication crisis and lab effects.  Replicating a published study is not always an easy thing to do.  This difficulty is commonly attributed to selective publication bias, bad design, poor description of methods, and even outright fraud \cite{baker2016reproducibility}.  However, some of the problem may simply be a matter of calibration.  If two labs perform identical experiments and get different data, that does not mean we need to throw out both datasets.  Instead, we can use MLM to calibrate the processes used by each lab.  Once the labs are properly calibrated, we can meaningfully combine both datasets.  Unlike other tools to deal with lab or batch effects (e.g. \cite{crow2018characterizing,johnson2007adjusting}), MLM makes zero assumptions about what calibrations we might expect.  In this case, $\ell$ would indicate subpopulations which both labs could access.  For example, we can take several batches of mice; for each batch we can send half to one lab and half to the other lab.  $X$ will the indicate the full results from each specimen examined in one lab and $Y$ coarser information from specimens examined in the other.  If the $X$ data is sufficiently detailed, the MLM assumption may hold.  
 \end{itemize}
 
-The rest of the paper proceeds as follows:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The Markov Link Method: input and output}
 
-\begin{itemize}
-\item We describe the identifiability problem and describe how our analysis puts this problem in our place.  We give several examples attempting to give intuition as to why the identifiability problem may not be as severe as it first appears.
-\item Applying these ideas, we develop the Markov Link Method for calibration without joint measurements.
-\item We apply the MLM to two single-cell transcriptomic methods.  The result uncovers some ways in which the methods appear to be well-calibrated and other areas where the calibration may not be as good. 
-\end{itemize}
-
-\section{The identifiability problem}
-
-Let us make three assumptions:
-
-\begin{enumerate}
-\item For each specimen $i$, the distribution of $X_i,Y_i|\ell_i$ may be written 
-\[
-\mathbb{P}(X_i=x,Y_i=y|\ell_i) = p^*(x|\ell_i)q^*(y|x)
-\]
-This is the central assumption we have discussed at length above.  For convenience we will also introduce the notation
-\[
-\mathbb{P}(Y=y|\ell) = h^*(y|\ell)=\sum_x p^*(x|\ell) q^*(y|x)
-\]
-\item Joint measurement is unavailable.  In particular, we will assume we have $n+m$ individual specimens.  Of these, we have observed $\ell_i,X_i$ for $i\in\{1\cdots n\}$ and $\ell_i,Y_i$ for $i\in n+1\cdots n+m$.  
-\item $X$ and $Y$ are discrete random variables with finite support (the general concepts here will apply more generally, but we leave it for future work; if the data is not discrete, we can always make it so by dividing it into suitable bins).  In this simple case, we may summarize all of our observed data in two matrices:
-\begin{align}
-N^X_{\ell x} = |\{i\leq n:\ \ell_i=\ell,X_i=x\}|  \qquad N^Y_{\ell y} = |\{i>n:\ \ell_i=\ell,Y_i=x\}|
-\label{eq:twomatrices}
-\end{align}
-Thus $N^X,N^Y$ are matrices counting the number of each kind of observation for method I and method II respectively. 
-\end{enumerate}
-
-Our goal will be to use $N^X,N^Y$ to estimate $q^*$, the calibration.  However, \emph{the data from the matrices $N^X,N^Y$ only enable us to estimate $p^*,h^*$}.  They do not enable us to directly estimate $q^*$.  Therefore, we define
-\[
-\Theta(p,h) \triangleq  \left\{q:\ \sum_x p(x|\ell)q(y|x) = h(y|\ell)\ \forall \ell,y,\ q(y|x)\geq 0\ \forall x,y, \sum_y q_{xy}=1\ \forall x\right\}
-\]
-as the set of values of the calibration $q$ which are consistent with a given value of $p$ (the conditional distribution of $X|\ell$) and $h$ (the conditional distribution of $Y|\ell$).  Any effort to estimate $q^*$ must therefore overcome two fundamentally different challenges:
-
-\begin{enumerate}
-\item Not-enough-data problems. We don't have infinite data, so we can't know the exact values of $p^*,h^*$.
-\item Identifiability problems. Even if we knew $p^*,h^*$ exactly, it is often impossible to know the value of $q^*$.  We can only ever know that it lies somewhere in $\Theta(p^*,h^*)$.  
-\end{enumerate}
-
-This point of view suggests a practical procedure for estimating $q^*$:
-
-\begin{enumerate}
-    \item Use traditional methods to develop estimators $\hat h,\hat p$ so that with more and more data we can guarantee that $\hat h\approx h^*$ and $\hat p\approx p^*$ with high probability.  In particular, we will use a robust pseudocount estimator for $p^*$ and use the MLM assumption to get a high-quality estimator for $h^*$ that leverages information from $N^X$ and $N^Y$.  
-    \item Then we may suppose that $q^*$ is probably somewhere \emph{near} to $\Theta(\hat p,\hat h)$.  
-\end{enumerate}
-
-It is not completely obvious that this will work.  Certainly $\hat p\approx p^*$ and $\hat h\approx h^*$.  Certainly $q^*\in \Theta(p^*,h^*)$.  But does that guarantee that $q^*$ is nearby to the set $\Theta(\hat p,\hat h)$?  Something could go quite wrong in this line of reasoning.  Fortunately, subject to mild assumptions, one can show that nothing goes wrong.  This is the content of our main technical contribution.  It can be found in Appendix \ref{sec:proof}.
-
-Let us now take a moment to understand the set $\Theta$.  This set encodes exactly how it is that the Markov Link assumption enables us to understand something about the calibration $q^*$.  That is, this set tells us how the things we can estimate (i.e.\ $p^*,h^*$) inform us about what we want to know (i.e.\ $q^*$).  To understand a bit more concretely how this works, it may be helpful to think of $p^*,h^*,q^*$ as matrices.  From this point of view, one aspect of the definition of $\Theta$ can be written more concisely as a matrix equality constraint on $q^*$: if $q \in \Theta(p^*,h^*)$, then $p^*q=h^*$.  This equation is in fact a literal mathematical rendering of the Markov Link assumption of conditional independence.  The consequences of this assumption and its corresponding equation depend upon whether $p^*$ has a left-pseudoinverse.
-\begin{itemize}
-    \item If $p^*$ has a left-pseudoinverse then this equation allows us to uniquely determine what we want ($q^*$) in terms of what we know ($p^*,h^*$).  In general, this will happen when the number of subpopulations outnumbers the number of different states that $X$ can take on.  In this case, the problem should be straightforward to solve.   
-    \item If $p^*$ does not have a left-pseudoinverse, then there is an identifiability issue: we can never hope to exactly determine $q^*$.  
-\end{itemize}
-
-In this paper we will focus almost entirely on the second case.  In this second case there is a genuine identifiability issue;  $\Theta(p^*,h^*)$ is nontrivial and so it is \emph{impossible} to ever determine the true value of $q^*$, regardless of how much data we have.  All we have is the equality and inequality bounds that arise from our knowledge that $q^* \in \Theta(p^*,h^*)$.  
-
-To gain intuition about the equality and inequality bounds that define the set $\Theta$, let us consider a few examples.\vspace{.1in}
-
-\begin{example}
-Let $\ell \in \{1,2\}$, $X\in \{1,2,3\}$, $Y\in \{1,2\}$, and 
-\[
-p^{*}=\left(\begin{array}{ccc}
-40\% & 50\% & 10\% \\
-10\% & 10\% & 80\%
-\end{array}\right)\qquad h^{*}=\left(\begin{array}{cc}
-20\% & 80\% \\
-40\% & 60\%
-\end{array}\right)
-\]
-That is, for example, $p^*_{1,2}=\mathbb{P}(X=2|\ell=1)=50\%$ and $h^*_{2,1}\mathbb{P}(Y=1|\ell=2)=40\%$.  Let us look at a single equation in the system $p^* q^* = h^*$ entailed by the MLM assumption.  For example, $h^*_{2,1}$, we get
-\[
-0.4 = h^*_{2,1} = \sum_x p^*_{2,x} q^*_{x,1} = .1 q^*_{1,1} + .1 q^*_{2,1} + .8 q^*_{3,1} 
-\]
-We thereby obtain an important constraint on what the calibration $q^*$ might be.
-
-This equation also takes on additional significance in light of the inequality bounds we have: $0\leq q^*_{xy}\leq 1$ for every $x,y$.  In other words, probabilities must be between 0 and 1, by definition.  This may seem trivial, but it has important consequences in light of the constraints imposed by the equation $p^*q=h^*$.  In particular, taking another look at that same equation, we see that
-\[
-0.4 = .1 q^*_{1,1} + .1 q^*_{2,1} + .8 q^*_{3,1} \leq .2 + .8 q^*_{3,1}
-\]
-It follows immediately that $q^*_{3,1}\geq .25$.  Each equation in the MLM system yields insights of this kind; together these insights form the constraints that define $\Theta$.  The more different subpopulations you have, the more equations of this kind you will have.  
-\end{example}
-
-\vspace{.1in}
-
-\begin{example}
-Let $\ell \in \{1\}$, $X\in \{1,2,3,\cdots 11\}$, $Y\in \{1,2\}$, and 
-\[
-p^{*}=\left(\begin{array}{ccccc}
-90\% & 1\% & 1\% & \cdots & 1\% \\
-\end{array}\right)\qquad h^{*}=\left(\begin{array}{cc}
-95\% & 5\% \\
-\end{array}\right)
-\]
-Here we have only \emph{one} population.  Still we are able to say something quite significant; using similar reasoning to that shown above we see that $q^*_{1,1}\geq 94.\bar4\%$.  
-\end{example}
-
-\vspace{.1in}
-
-\figgy{
-\hfill{}\figgygr{.7}{../images/polytope}\hfill{}
-\caption{We consider the simple case $\ell=1$, $X\in \{1,2\}$, $Y\in \{1,2\}$.  In this case the space of values of the calibration $q$ which are valid probability distributions can be understood as a box.  The space of values of $q$ which satisfy the matrix equation $p^* q = h^*$ can be understood as a line that passes through that box.  The set of possible values of $q$ which are consistent with the matrix equation and are also valid probability distributions forms the set $\Theta$, which in this case can be identified with a line segment.  We know that the true value of $q^*$ must lie somewhere inside this $\Theta$.  Depending upon the exact values of $p^*,h^*$, the corresponding line segment may be larger or smaller.  For example, if the line crosses close to a corner of the box, then $\Theta$ may be restricted to a very small region near that corner.  \label{fig:polytopeexample}}
-}
-
-\begin{example}
-Finally, let us consider one class of examples in which the entire situation can be visualized: $\ell=1$, $X\in \{1,2\}$, $Y\in \{1,2\}$.   Notice that $q$ is completely defined by $\theta_1=\mathbb{P}(Y=1|x=1)$ and $\theta_2=\mathbb{P}(Y=1|x=2)$.  The matrix equation $p^* q^* = h^*$ corresponds to a linear constraint on $\theta_1,\theta_2$, namely $p^*_{11}\theta_1 + p^*_{12}\theta_2 = h^*_{11}$.  On the other hand, the fact that $q^*$ must be a valid probability distribution tells us that $\theta_1,\theta_2$ must lie inside the box $[0,1]\times[0,1]$.   Combining the matrix equation with the constraints of the box, we learn that $q^*$ lies inside a certain bounded, one-dimensional space.  This space is precisely $\Theta$.  It can be identified with a line segment, and the depends on the exact values of $p^*,h^*$.  In some cases it is quite large, i.e.\ it will be difficult to know much about the true value of $q^*$.  However, in other cases the positivity restrictions force $\Theta$ to be a very small region indeed.  See Figure \ref{fig:polytopeexample} to visualize this.  In real-world cases this $\Theta$ is much higher-dimensional and harder to visualize, but in this simple case we can see it clearly.
-\end{example}  
-
-\section{The Markov Link Method}
-
-Let us now exactly describe our approach for calibrating in the absence of joint measurement.  As in Equation (\ref{eq:twomatrices}) above, we assume that $X$ and $Y$ are discrete random variables and $N^X,N^Y$ are the matrices describing the  observed data. The purpose of the Markov Link Method is to try to use these matrices to estimate $q^*(y|x)=\mathbb{P}(Y=y|X=x)$, the calibration between $X$ and $Y$.  The Markov Link Method has three main components:
+The Markov Link Method is a procedure from estimating the distribution $X,Y|\ell$ from data, under the Markov Link Method assumption.  Details on the exact algorithm and convergence results are given in Section \ref{sec:mlm}.  For now, let us content ourselves with looking at the input and the output of the MLM:
 
 \begin{description}
-\item[Estimation]  Estimate $p^*$ with robust pseudocount estimator (cf.\ \cite{flach2012machine}):
-\begin{align}
-\hat p(x|\ell) \triangleq \frac{1+N^X_{\ell x}}{\sum_{x'} N^X_{\ell x'}} \label{eq:pseudocountp}
-\end{align}
-and then calculate a possible guess for $q^*$, namely
-\begin{align}
-\hat q = \argmax_q \sum_{\ell,y}N_{\ell y}\log\left(\sum_{x}\hat p(x|\ell)q(y|x)\right) + \kappa \sum_{xy} \log q(y|x)
-\label{eq:mlmq}
-\end{align}
-The Dirichlet prior regularizer $\kappa$ ensures this optimization problem has a unique solution; indeed, one may easily verify that the objective is strictly convex. In practice, we took $\kappa$ to be any small constant.    We use a majorization-minimization approach to solve this optimization problem.  That is, we first take an initial guess for $\hat q$.  We then define $\tilde \pi_{\ell,x,y} \gets \hat p(x|\ell)q(y|x) / \sum_{x'} \hat p(x'|\ell)q(y|x')$.  We then update $\hat q$ by  $\hat q \gets \argmax_q \sum_{\ell,y,x}N_{\ell y}\tilde \pi_{\ell,x,y}\log\left(\hat p(x|\ell)q(y|x)\right) + \kappa \sum_{xy} \log q(y|x)$, which can be solved in closed form.  We then iterate this procedure, redefining $\tilde \pi$ and then redefining $\hat q$ in each iteration.  It is well-known that since the overall problem is convex we can guarantee that this procedure converges to the global optima (cf.\ \cite{wu1983convergence} for a detailed exposition).  In practice we found 5000 iterations to be sufficient for convergence.  
-
-This yields a high-quality, consistent estimator for $h^*(y|\ell)\triangleq \mathbb{P}(Y=y|\ell)$, namely $\sum_x \hat p(x|\ell) \hat q(y|x)$ (cf.\ the lemma in Appendix \ref{sec:proof} for a simple consistency proof).  It also gives us a unique estimate for $q^*$, although this estimate may suffer from errors due to incorrect assumptions, lack of data, or identifiability.  Therefore, a vital part of the MLM is a criticism step.
-\item[Model criticism]  The MLM assumption cannot be checked directly.  However, we can check certain aspects of it.  In particular, the MLM assumption suggests a natural estimator for the distribution .  On the other hand, a more traditional approach would etimate $h^*$ from $N^Y$ using a simple pseudocount method.  We can compare both estimators for $h^*$ using held-out log-likelihood of $Y$ data.  If the MLM estimate is considerably worse than the pseudocount method, it may indicate that the MLM assumption doesn't fit with the data.
-\item[Uncertainty characterization] Measure our uncertainy about $q^*$ using \emph{Bootstrapped Rotationally Uniform eXtremal Paired (BRUXP)} samples and \emph{Rotationally Uniform eXtremal Paired (BRUXP)}.  The variability in these samples capture error both due to insufficient data and due to identifiability issues.  
+    \item[Input] We assume we are given $n$ samples using tool I and $m$ samples using tool II.
+    \begin{itemize}
+        \item Samples $(\ell_1,X_1)\cdots (\ell_n,X_n)$ sampled such that $\mathbb{P}(X_i=x|\ell_i=\ell)= p^*(x|\ell)$
+        \item Samples $(\ell_{n+1},Y_{n+1})\cdots (\ell_{n+m},Y_{n+m})$ sampled such that $\mathbb{P}(Y_i=x|\ell_i=\ell)= h^*(x|\ell)$
+    \end{itemize}
+    We assume that $\ell,X,Y$ are discrete random variables with finite support. We also assume that the MLM assumption holds, i.e.\ $h^*(x|\ell)=\sum_y p^*(x|\ell)q^*(x|y)$ for some unknown $q^*$.  It would be interesting to generalize the method to non-discrete random variables, but we leave this for future work.  Note that if the random variables are low-dimensional and continuous, the MLM can still be applied by discretizing the continuous space into a finite number of bins.
+    \item[Output] Our goal is to estimate $p^*,q^*,h^*$ from the samples.  In this effort, we return:
+    \begin{itemize}
+        \item Point estimates, $\hat p,\hat q,\hat h$.  
+        \item Quantitative estimates of the variability of these point estimates due to insufficient data, $\Delta_p,\Delta_q,\Delta_h$.  
+        \item An quantitative estimate of the variability of $\hat q$ due to so-called `identifiability' issues, $\bar d$.  
+        \item Variability visualizations indicating a set of ``plausible'' values for each row of $q$; this gives a qualitative counterpart to the quantitative measures of variability.
+    \end{itemize}
+    Precise definitions and mathematical results are given in section \ref{sec:mlm}.
 \end{description}
 
-We now describe this very last step in more detail:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Simulation results}
 
-\vspace{.2in}
-\begin{definition}
-Let $d$ denote a random direction in calibration space.  That is, let $d$ denote a matrix of the same dimensions as the calibration $q$, each entry of which is sampled from a random normal distribution.  Sample with replacement to produce a surrogate dataset $N^{X,(1)},N^{Y,(1)}$, estimate $\hat p^{(1)},\hat q^{(1)}$ using the surrogate dataset and the method outlined above, and define $\hat \Theta^{(1)} \triangleq \Theta(\hat p^{(1)},\hat p^{(1)}\hat q^{(1)})$.  Repeat this process to obtain $\hat \Theta^{(2)} \triangleq \Theta(\hat p^{(2)},\hat p^{(2)}\hat q^{(2)})$.  Now, let us take $\tilde q^{(1)}$ to be the most extremal vertex of $\hat \Theta^{(1)}$ in the direction $d$ and $\tilde q^{(2)}$ to be the most extremal vertex of $\hat \Theta^{(2)}$ in the direction $-d$.  The tuple $d,\tilde q^{(1)},\tilde q^{(2)}$ is said to be a \textbf{Bootstrapped Rotationally Uniform eXtremal Paired (BRUXP)} sample.  If we adopt this same procedure without the resampling-with-replacement aspect, we will refer to it as \textbf{Rotationally Uniform eXtremal Paired (RUXP)}.  
-\end{definition}
+Before we show the results of the MLM on real data, let us look at some simulation results to see what the MLM can and cannot achieve.  In particular, we will:
 
-For each BRUXP sample, the pair $\tilde q^{(1)},\tilde q^{(2)}$ gives for the range of what $q^*$ might be along the direction $d$.  The variability amongst many such samples indicates our uncertainty about the true $\hat q$.  
+\begin{itemize}
+    \item Pick a set of possible parameter values for $p^*,q^*,h^*$.
+    \item Generate data according to these distributions, namely $n$ samples according to $p^*$ and $m$ samples according to $h^*$.  
+    \item Pretend to forget the true values of $p^*,q^*,h^*$.
+    \item Apply the Markov Link Method to the generated samples.
+    \item Compare the results of the MLM with the original true values.
+\end{itemize}
 
-We cannot make general claims about the bootstrap in this case, due to the usual difficulties with bootstrap and extremal statistics (cf.\ \cite{andrews2000inconsistency}).  However, we do at least know that this procedure correctly handles the identifiability issue in the asymptotic limit.  In particular, subject to mild reguarity conditions, we can show that $\inf_{q\in \Theta(\hat p, \hat p \hat q)} |q-q^*|\rightarrow 0$ as we gather sufficient data.  That is, with sufficient data BRUXP samples are guaranteed to represent the uncertainty we face from identifiability concerns.  An exact statement may be found in Appendix \ref{sec:proof}.
+Our purpose is to see how well the method performs if all of its assumptions are met. We will measure performance two ways:
 
-The the variation amongst the BRUXP samples is necessarily due to a combination of effects from insufficient data and effects from the identifiability issues.  To separate issues, we recommend that one also look at Rotationally Uniform eXtremal Paired (RUXP) samples (i.e.\ BRUXP samples taken without using the sampling-with-replacement procedure).  The variability among these samples corresponds primarily to uncertainty due to identifiability concerns, and ignores variability due to insufficient data.  
+\begin{enumerate}
+    \item First, we will measure the error of the estimators $\hat p,\hat q,\hat h$, i.e.\ how much they differ from the true generating distributions $p^*,q^*,h^*$.  For $h$ we will compare this measurement error against a standard pseudocount estimator (we will not do the same for $p$, because the MLM estimator for $p$ \emph{is} a pseudocount estimator).  We refer the reader to Section \ref{sec:mlm} for details on this estimator.
+    \item Second, we will look at how well the MLM has estimated its uncertainty about the estimates.  We know that there will always be some amount of error.  For this reason, the MLM offers two tools to estimate the amount of error that may be present.  In this section we will particularly focus on the quantities $\Delta_p,\Delta_q,\Delta_h$ (which approximately indicate variability due to insufficient data) and $\bar d$ (which approximately indicates variability due to so-called identifiability concerns).  For a precise explanation of these two sources of variability, we refer the reader to Section \ref{sec:mlm}.  
+\end{enumerate}
 
-Code for this procedure is available at https://github.com/jacksonloper/markov-link-method.  All calculations in this paper can be replicated by going through a tutorial-style ipython notebook that can be found at the same address.
-
-\section{Empirical results}
+For our first simulation, we will look at a case in which the MLM performs well.  We consider twenty different subpopulations (which we will label $\{1,2,3,\cdots 20\}$).  We will assume that tool I always returns an integer measurement in $\{1,2,3,4,5,6\}$ and tool II returns a measurement in $\{1,2,3,4,5,6\}$.  We will assume we have one hundred samples for each subpopulation for each method.  Some results of this simulation can be seen in Figure \ref{fig:simulation1gt}.  This figure shows that the MLM gives us an edge in estimating $h$, performing better than a traditional pseudocount estimator.  It also allows us to estimate $q$ with decent accuracy (which is only possible because of the Markov Link Assumption).  The figure also shows that the $\Delta$ variability measures seem to accurately predict the estimation error.  The $\bar d$ for this simulation was identically zero, because there were no identifiability issues in this case; this is related to the fact that there were more subpopulations than there were possible values that tool I could return.  
 
 \figgy{
-\begin{minipage}[c]{0.3\textwidth}
-\figgygr{1.0}{../images/Nlx}
-\end{minipage}\hfill
-\begin{minipage}[c]{0.3\textwidth}
-\figgygr{1.0}{../images/Nly}
-\end{minipage}\hfill
-\begin{minipage}[c]{0.3\textwidth}
-\caption{Input: two tables.  The Allen Institute had access to various cre/lox cell selection techniques.  Each technique pulls out a different group of cells.  Once the cells were selected, they were then either subjected to technique I or technique II.  Technique I gives a very complete analysis of the gene expression of the cell.  Technique II gives a less complete analysis, but yields additional electrophysiological data that may be of interest.  For each subpopulation and each technique, data was gathered to estimate the distribution of different cell-types.  These are shown above.  Each row corresponds to a different cell-type.  Each column corresponds to a different subpopulation.  Each entry gives the number of a particular cell-type found within a particular population, according to a particular technique.  \label{fig:alleninput}}
-\end{minipage}\hfill
+\hfill{}\figgygr{.7}{../images/simulation1Groundtruth}\hfill{}
+
+\vspace{.1in}
+
+\hfill{}\begin{tabular}{r|p{.3in}p{.7in}p{1.0in}}
+Variable & MLM error & Pseudocount error & $\Delta$ \\
+\hline
+$p$ & 1.5 & N/A & 1.6 \\
+$q$ & 0.6 & N/A & 0.6 \\
+$h$ & 0.9 & 1.4 & 1.0 \\ 
+\end{tabular}\hfill{}
+
+\caption{For our first simulation, we imagine that the true values of $p^*,q^*,h^*$ are indicated by the first row of heatmaps above.  The color of each entry indicates a probability between 0 and 1, with 0 being represented by black and 1 being represented by white.  For example, the entry at the third row and the fifth column of the $q$ plot indicates $\mathbb{P}(Y=5|X=3)=q^*(5|3)$. The second row of heatmaps indicates the estimates for these quantities returned by the MLM.  We can also look at this more quantitatively, as shown in the table.  For each variable, $p,q,h$, we can compute the total variation distance between our estimates and the truth.  For $h$ we can also compare the error we get when using a more standard pseudocount estimator.  Finally, in the right-most column of the table, we show the $\Delta$ variability measures for each variable.  These are intended to roughly indicate the level of error we would expect due to insufficient data.  They are caclulated using a bootstrap method.  We can see that the MLM variability measured do seem to give a good indication of the actual error level. \label{fig:simulation1gt}}
+}
+
+For our second simulation, we will look at a case where the MLM does a good job of estimating $p,h$, but does not succeed in accurately estimating $q$.   We use the same data as in the previous simulation, but we will merge groups of subpopulations into four larger subpopulations.  This will make it easier to estimate $h(y|\ell),p(x|\ell)$, since we have fewer subpopulations and for each one we will have five times as much data.  The results are shown in Figure \ref{fig:simulation2gt}.  As we would expect, estimation error of $p,h$ improves.  However, estimation of $q$ does not improve at all.  In fact, it is considerably worse.  To understand this, we run a further simulation with the same true distributions but a virtually infinite number of samples.  Even in this case, we see that accurate estimation of $q$ is still not achieved; we end up with a final error of $0.79$.  This significant error is due to a fundamental identifiability issue which is discussed in detail in Section \ref{sec:mlm}.  Accurate estimation of $q$ is simply impossible in this case, regardless of the number of samples.  This is related to the fact that the number of subpopulations is smaller than the number of different values that tool I can report.  What is worse, the $\Delta_q$ reports only $.01$ for the predicted error of $\hat q$.  It is for this reason we must also look at $\bar d$, which approximates the error due to identifiability.  For this simulation we calculate that $\bar d=3.5$, which captures the fact that our estimator $\hat q$ may suffer from nontrivial identifiability errors.  Indeed, it appears to substantially overestimate the total error.  This problem is somewhat unavoidable without additional assumptions.  A precise statement of the theoretical guarantees regarding the ability of the MLM to estimate its own error due to identifiability issues can be found in Section \ref{sec:mlm}.  I
+
+\figgy{
+$500$ samples per population:
+\hfill{}\begin{tabular}{r|p{.7in}p{1.0in}}
+Variable & MLM error & $\Delta$ \\
+\hline
+$p$ & 0.12 & 0.16 \\
+$q$ & 1.33 & 1.19 \\
+$h$ & 0.17 & 0.15 \\ 
+\end{tabular}\hfill{}
+
+\vspace{.2in}
+
+$10^{10}$ samples per population:
+\hfill{}\begin{tabular}{r|p{.7in}p{1.0in}}
+Variable & MLM error & $\Delta$ \\
+\hline
+$p$ & $10^{-7}$ & $10^{-3}$ \\
+$q$ & $0.79$ & $0.01$ \\
+$h$ & $10^{-3}$ & $10^{-3}$ \\
+\end{tabular}\hfill{}
+
+\caption{Our second simulation is similar to our first.  However, instead of twenty subpopulations, we will assume we only have five subpopulations with four times the amount of data for each subpopulation.  This makes estimating $p,h$ easier, but it doesn't make estimating $q$ any easier. \label{fig:simulation2gt}  Even when we give ourselves a virtually unlimited number of samples, perfect estimation of $q$ is just not possible.  The $\Delta$ measures of the MLM do \emph{not} accurately reflect this fact.  It is for this reason that the MLM additionally provide the quantity $\bar d$.   For this simulation $\bar d=3.5$, which allows us to know that there are identifiability concerns, and also to bound the magnitude of those concerns.}
+}
+
+For our next simulation, we will dig deeper into the question of when $q$ can be perfectly estimated.  To this end, we will consider cases in which the number of subpopulations is four, and there are six possible outcomes for both measurement tools.  In the general case, this will make it \emph{impossible} to correctly determine $q$ without joint measurement.  However, for certain values of $q$ the truth can be recovered.  To see this, we will look at a variety of values of $q$.  On the one hand, we will consider the case that $X,Y$ are independent, i.e. $q(y|x)=q(y|x')$ for every $x,x'$.  On the other hand, we will consider the case that $X,Y$ are deterministically related, in particular $X=Y$.  We will also consider every $q$ ``in-between'' these two extremes.  These in-between $q$s are found by linear interpolation.  For each such $q$ we will generate datasets of various sizes and try to estimate $q$ from the datasets using the MLM.  The results are to be found in Figure \ref{fig:estimatingq}.  These results show how in the two extreme cases it may be possible to recover $q$, but for in-between cases it is indeed not possible.  This is true even in the limit of infinite data.  We leave a complete mathematical understanding of this result to future work.  For the purposes of this paper, we content ourselves with noting that if $X$ and $Y$ can take on one of $2^k$ values and are related to each other by an invertible deterministic function, then both the fact that the relationship is deterministic and the exact specification of the invertible function can be determined with only $k+1$ properly chosen subpopulations (at least in the asymptotic limit of infinite data).  This result is proven in Appendix \ref{sec:miracle}.
+
+\figgy{
+\hfill{}\figgygr{.7}{../images/estimatingq}\hfill{}
+
+\caption{In our third simulation we fix a particular $p$ and consider a range of $q$s.  For each possible $q$ we generate a certain number of samples per subpopulation and then try to use the resulting dataset to estimate $q$.  On the one hand, we consider the case that $q$ causes $X,Y$ to be independent; in thie case we can get a good estimate of $q$.  In some sense this is because $q(y|x)=q(y|x')$ for every $x,x'$, and so there are simply fewer values to estimate.  On the other hand, we consider the case that $q$ causes $X,Y$ to be deterministically bound, i.e. $q(y|x)=1$ if $x=y$ and $q(y|x)=0$ otherwise.  In this case it is also possible to estimate $q$ (given enough data).  In-between, it is not possible to exactly determine $q$, even in the asymptotic limit of infinite data.\label{fig:estimatingq}}
+}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Empirical results for cell-types}
+
+We now turn to an application of the MLM to real data.
+
+\figgy{
+\hfill{}\figgygr{1.0}{../images/allenNlx}\hfill{}
+
+\hfill{}\figgygr{.5}{../images/allenNly}\hfill{}
+
+\caption{Input: two tables.  The Allen Institute had access to various cre/lox cell selection techniques.  Each technique pulls out a different group of cells.  Once the cells were selected, they were then either subjected to technique I or technique II.  Technique I gives a very complete analysis of the gene expression of the cell.  Technique II gives a less complete analysis, but yields additional electrophysiological data that may be of interest.  For each subpopulation and each technique, data was gathered to estimate the distribution of different results.  These are shown above.  Each row corresponds to a different subpopulation.  Each column corresponds to a different measurement value.  Each entry of the heatmaps indicate the number of specimens measured to have a particular measurement value within a particular subpopulation (as measured by the corresponding technique).  Notice that tool I has many more different measurement results that it can return; this is why there are many more columns in the first heatmap.  \label{fig:alleninput}}
 }
 
 \subsection{Background}
 
-Our motivation for this problem arose from looking at Allen Institute cell-type assignment of cells, performed using two different experimental techniques (also called experimental ``modalities'').  Each modality would take a cell and determine what ``type'' of cell it was.  However, as part of that process it would destroy the cell.
+Our motivation for this problem arose from looking at Allen Institute cell-type assignment of cells, performed using two different experimental techniques (also called experimental ``modalities'').  Each modality would take a cell and determine what ``type'' of cell it was.  However, each technique destroyed the cell in the process of measuring it.
 
-Best efforts were made to use biological intuition to calibrate the methods.  For example, both methods have a notion of a ``Lamp5 Egln3\_1'' cell-type.  If a cell was designated as ``Lamp5 Egln3\_1'' celltype using one method, the hope was that it would also be given the same designation if it was processed using the other method.  The two methods were designed to achieve this goal.  However, each method has its own biases and errors, and it was not obvious whether this effort was successful.  In particular, it seemed clear that in some cases cells labelled one way with one method would get labelled another way with another method, but it was not clear how often this occurred.  
+Best efforts were made to use biological intuition to calibrate the methods.  For example, the $Y$ method has a notion of a ``Lamp5'' cell type.  The $X$ method has refined this type into many sub-types, such as ``Lamp5 Pdlim5'' and ``Lamp5 Slc35d3.''  If a cell was designated as ``Lamp5 Pdlim5'' under the $X$ method, the hope was that it be given the ``Lamp5'' type under the $Y$ method.  The two methods were designed to achieve this goal.  However, each method has its own biases and errors, and it was not obvious whether this effort was successful.  In particular, it seemed clear that in some cases a cell labelled one way with one method would get labelled quite differently with another method, but it was not clear how often this occurred.  
 
-Fortunately, there was a kind of information that seemed like it might help determine whether the two methods were properly calibrated: sub-populations.  Using a cre/lox system (cf.\ \citep{tasic2017shared}) they were able to pick out specific, overlapping subpopulations of neurons.  Each subpopulation was expected to contain different proportions of the different cell-types.  For each subpopulation and each method, many specimens were sampled and their cell-types determined.  If the methods were perfectly calibrated, we would expect that both methods would yield the same distribution of cell-types in each subpopulation.  
+Fortunately, there was a kind of information that seemed like it might help determine whether the two methods were properly calibrated: sub-populations.  Using a cre/lox system (cf.\ \citep{tasic2017shared}) they were able to pick out specific, overlapping subpopulations of neurons.  Each subpopulation was expected to contain different proportions of the different cell-types.  For each subpopulation and each method, many specimens were sampled and their cell-types determined.  The result of this process was two tables, shown in Figure \ref{fig:alleninput}.  While it seemed clear that these tables should say something about the calibration, it was not obvious how to best use this information.  It was for this purpose that the MLM was developed.
 
-Towards this effort, data was collected for each subpopulation and each method.  The result of this process was two tables, shown in Figure \ref{fig:alleninput}.  Perhaps not surprisingly, it was found that the distribution of cell-types appeared different under the two modalities.  Indeed, it was found necessary in method II to designate some cells with certain ``nxx'' types that indicated different kinds of uncertainty about the cell-type.  Thus even the set of cell-types was not the same between the two groups.  Clearly the methods were not perfectly calibrated -- but how big of a problem was it?  It is not obvious to know just by staring at Figure \ref{fig:alleninput}.  A more quantitative method was needed.  
-
-\subsection{Estimation}
+\subsection{Results}
 
 \figgy{
-\figgygr{0.8}{../images/qhat}
-\caption{The $\hat q$ estimated by the MLM method with $\kappa=.01$.  Notice the mass along a somewhat diagonally-oriented slice of the calibration.  This corresponds to cell-types which appear to be designated with the same cell-type by both methods.   The large region on the right corresponds to the ``nxx'' types in Tool II; these indicate different forms of uncertainty about the type of the cell.\label{fig:allenout}}
+\hfill{}\figgygr{0.3}{../images/allenqhat}\hfill{}
+\caption{The $\hat q$ estimated by the MLM.\label{fig:allenout}}
 }
 
-The first step of the Markov Link Method is to estimate the calibration with the estimator $\hat q$ according to equations (\ref{eq:pseudocountp}) and (\ref{eq:mlmq}).    Taking $\kappa=.01$, we obtained a calibration found in Figure \ref{fig:allenout}.  From this, it appears that there are many cells which would be identified with the same cell type in either method.  For example, according to $\hat q$, if a cell is classified as type ``VISp L5 Endou'' by tool I, it appears there is a 91\% chance it will be classified the same way by tool II.  However, there are other cell-types which seem to have more ambiguity.  Lest we make too many conclusions without considering the uncertainty in our estimates of $q^*$, let us proceed to the criticism phase of the MLM.
+Using the Markov Link Method, we obtained an estimate $\hat q$ for the true calibration.  This calibration is shown in Figure \ref{fig:allenout}.  From this figure, it appears that the two methods may be fairly well-calibrated.  For example, according to $\hat q$, if a cell is classified as type ``Lamp5 Pdlim5'' by tool I, it appears there is a 99.9\% chance it will be classified with the ``Lamp5'' type under tool II.  However, there are other cell-types which seem to have more ambiguity.  Yet others seem to perhaps be classified incorrectly \emph{most} of the time; we see that ``Vip Igfbp6'' type is most often classified as a ``Pvalb'' type instead of a ``Vip'' type.  
 
-\subsection{Model criticism}
+Everything in the preceeding paragraph should be taken with a significant grain of salt; it is quite treacherous to directly interpret the estimator $\hat q$, because we know that this estimator for the calibration may suffer from errors.  This is both due to insufficient data and to identifiability concerns (these are discussed in detail in Section \ref{sec:mlm}).  For a qualitative assessment, we instead advocate looking at the variability visualizations which the MLM produces.  
 
-The Markov Link Method assumption suggests a natural estimator for the distribution of tool II results ($Y$) under each subpopulation ($\ell$).  We have denoted this distribution $h^*$, and the MLM estimates this distribution with $h^*(y|\ell)\approx \sum_x \hat p(x|\ell) \hat q(y|\ell)$.  A more traditional method would be to estimate $h^*$ using a pseudocount method (cf.\ \cite{flach2012machine}).  We can compare these methods using held-out log likelihood.  That is, we train both methods using a subset of our data.  Then we compute the negative log likelihood of the held out data under both models.  This indicates how concisely the model can represent the held out data.  If the MLM method is much worse, it may be a sign that the MLM assumption is poor.  Smaller values are better:
+For example, in the right side of Figure \ref{fig:allenboot} we show the variability visualization for specimens which are measured as being ``Vip Igfbp6'' by tool I.  Whereas in the original point estimate $\hat q$ we found that ``Vip Igfbp6'' seemed to be strongly associated with the ``Pvalb'' type, this figure shows that in reality we are not quite sure what types these specimens may be associated with.   Each row corresponds to a different plausible distribution on $y$.  As we can see, they truly run the gamut.  In the left side of the same figure we also show the same visualization applied to the row of $\hat q$ corresponding to specimens measured as ``Lamp5 Pdlim5'' by tool I.  We see very little variability in this visualization, indicating significant confidence that the ``Lamp5 Pdlim5'' type of tool I is truly well-calibrated to match the ``Lamp5'' type of tool II.
 
-\begin{itemize}
-    \item Traditional estimator: 3.96 nats per cell
-    \item MLM estimator: 3.70 nats per cell
-\end{itemize}
-
-This is encouraging.  Our model is as good at predicting held-out data as a more traditional pseudocount estimator (which makes no assumptions on the conditional independence structure of the data).  In fact, the MLM estimate is able to outperform the traditional estimate, presumably because it can leverage the data in $N^X$ to help us learn about the distributions on $Y$.  At the very least, it is not a clear sign that the MLM assumption is inappropriate for this data.
-
-\subsection{Uncertainty characterization}
-
-We obtained BRUXP samples and RUXP samples for this dataset.  These can be used to understand our uncertainty about the calibration $q^*$ in an number of ways.
+In cases where the visualization suggests significant variability, the MLM then suggests what subpopulations we should look at in order to resolve the ambiguities.  For example, to resolve the ambiguities about ``Vip Igfbp6'' specimens, it appears it would be most important to obtain samples of subpopulations of cells which have many cells measured as ``Pvalb'' by technique II and very few cells measured as ``Sncg.''  
 
 \figgy{
-\figgygr{0.8}{../images/ruxquant}
-\caption{Here we plot a histogram of $|\tilde q^{(1)}_i- \tilde q^{(2)}_i|$ among fifty BRUXP samples $\{d_i,\tilde q^{(1)}_i,\tilde q^{(2)}_i\}_{i\in 1\cdots 50}$.  Each distance estimates the extent of our uncertainty about the calibration $q$ along the direction $d$.  We can compare this with the extent of the uncertainty we had before we applied our method, i.e. the diameter of the set of probability matrices with these dimensions.  In this case the diameter of that set is exactly 14.  In this sense, the MLM has enabled us to roughly half our uncertainty about the calibration. \label{fig:ruxquant}}
+\hfill{}\figgygr{0.4}{../images/q1rLamp5Pdlim5}
+\figgygr{0.4}{../images/q1rVipIgfbp6}\hfill{}
+\caption{The MLM provides \emph{variability visualizations} for each row of the calibration $q$.  In this figure we show two such examples.  To produce the visualization we must first select a row of $q$.  This corresponds to particular measurement value that can be obtained from tool I.  In this case we select ``Lamp5 Pdlim5'' to produce the left visualization and ``Vip Igfbp6'' to produce the right visualization.  The bottom of each visualization shows the value of $\hat q(y|x)$ for the selected type $x$ (it shows this through a heatmap with a single row).  Here $\hat q$ is the Markov Link Method estimator we have described before.  Above this original $\hat q$ value, we show a heatmap with many other possible examples for what else this row might look like.  The variability among these possibilities gives a qualitative measure of our uncertainty about that particular row of the calibration $q$. \label{fig:allenboot}}
 }
 
-The distances between the paired vector in a BRUXP sample give us one kind of insight into the extent of our uncertainty.  Recall that for each direction $d$ the BRUXP sample comprises the extremal vertex in the direction $d$ as well as the extremal vertex in the direction $-d$.  The distance between these two vertices gives a kind of measure for the extent of our uncertainty.  We plot a histogram of these distances in Figure \ref{fig:ruxquant}.  This figure suggest that this extent is around 7 (although we caution that general results on polytope diameter estimation are not encouraging, cf. \citep{brieden1998approximation}).  By contrast, the diameter of the entire space of valid probability matrices is $14$.  In this sense, the Markov Link Method enables us to half our uncertainty about the calibration.  
+The MLM also yields estimates for $h^*$.  As in our simulation section, these quantities could also be estimated using more traditional pseudocount methods.  We can compare the MLM estimates with the traditional methods, using the method of log-likelihood on held-out data.  We find that both methods achieve a rate of 1.3 nats per entry on held out data.  This gives us confidence that the MLM assumption might be right; if the MLM assumption was wrong our estimation process could force $h$ to take on an incorrect value.   This is no proof that the MLM assumption is correct for this data, but it is a good sanity-check.  
 
-\figgy{
-\figgygr{0.6}{../images/VipRspo4}
-\caption{Each column represents a possible manner in which method I and method II are calibrated for cells which are designated as type `Vip Rspo4' by method I.  Together, the columns form a notion of our uncertainty about this aspect of the calibration.  This plot shows that cells designated as `Vip Rspo4' by method I may be designated by method II as taking on various `Vip'-related celltypes and or some of the `nxx' celltypes.  We cannot be sure which of these columns more faithfully represents the true calibration between the methods.  \label{fig:ruxqual}}
-}
-
-Qualitatively, we can inspect the BRUXP samples by focusing on a single value of $X$ at a time.  For example, in Figure \ref{fig:ruxqual} we focus on the distribution of $Y$ given that method I measures a specimen as having the type `Vip Rspo4.'   In this figure we look at various BRUXP samples, lining up all the pairs into a single heatmap.   We see that cells designated as type `Vip Rspo4' by method I may be associated with one of the `Vip'-related celltypes in method II or an `n53' or `n57' type (recall that these types indicate a group of possible cell types, of which `Vip Rspo4' is one).  For example, it may be that method II would identify such cells as `Vip Htr1f' cells.  This is potentially concerning.  On the other hand, the plot above suggests that these cells are \emph{not} ever identified as `Vip Lmol\_1' cells.  That is, method II is able to accurately discern between cells designated as `Vip Rspo4' by method I and cells designated as `Vip Lmol\_1' by method I.  This is encouraging. To further resolve the various remaining ambiguities in the calibration, we would need to perform additional experiments involving a subpopulation that might be likely to include `Vip Rspo4' cells but no `Vip Htr1f' cells.
-
-Let us next look at the BRUXP samples for cells designated by tool I as having the `VISp L5 Endou' type; these samples are fairly unequivocal.  Figure \ref{fig:ruxqual2} gives strong support for the notion that the methods are very well-calibrated with respect to this cell-type.  In all of the BRUXP samples we see that a cell designated as `VISp L5 Endou' by method I would be likely to be designated with the same type with method II.  
-
-\figgy{
-\figgygr{0.6}{../images/Endou}
-\caption{Each column represents a possible manner in which the methods are calibrated for cells designated by method I as being type 'VISp L5 Endou.'  Notice that in every column there is strong signal at the corresponding type in method II.  This suggests a good calibration. \label{fig:ruxqual2}}
-}
-
-In the interests of trying to disentangle our uncertainty due to insufficient data from our uncertainty due to identifiability, we repeat the histogram-of-distances analysis on RUXP samples.  Recall that RUXP samples are just like BRUXP samples, only we do not perform the resampling with replacement.  This RUXP histogram gives us a lower bound on the diameter of the set $\Theta(\hat p,\hat q)$.  We expect this diameter to be smaller than the extent we measured in the first analysis: the RUXP analysis only captures uncertainty due to identifiability whereas the BRUXP analysis also captures our uncertainty due to insufficient data.   This is indeed what we find.  Figure \ref{fig:ruxquant2} shows the result of the histogram-of-distances analysis on the RUXP samples.  We see distances are generally closer to 6 and never as high as 7.  Recall that 7 was the typical distance found in the original BRUXP analysis.  
-
-\figgy{
-\figgygr{0.6}{../images/ruxquant2}
-\caption{Here we plot a histogram of $|\tilde q^{(1)}_i- \tilde q^{(2)}_i|$ among fifty RUXP samples $\{d_i,\tilde q^{(1)}_i,\tilde q^{(2)}_i\}_{i\in 1\cdots 50}$. Each distance estimates the extent of our uncertainty about the calibration $q$ along the direction $d$ that is due to identifiability issues alone.  These distances do not measure the extent of our uncertainty due to insufficient data.  We can compare this with the kinds of distances we saw in Figure \label{fig:ruxquant2}, which were generally larger because they measured uncertainty due to both insufficient data and identifiability issues.   \label{fig:ruxquant2}}
-}
-
-With more samples, we expect that we could get our original BRUXP analysis in Figure \ref{fig:ruxquant} to look more like the RUXP analysis in Figure \ref{fig:ruxquant2}.  However, it appears that more samples might not be sufficient to bring the diameter of our uncertainty below 6.  For that, we would need different \emph{kinds} of experiments, using different subpopulations.  For example, as we saw above, we could reduce some of the identifiability concerns with experiments using a new subpopulation that included `Vip Rspo4' cells but not `Vip Htr1f.'
-
-Finally, in this special case there is an additional analysis that is appropriate.  The team producing method I and method II designed these methods to have corresponding types.  The hope was that a cell designated as `Vip Rspo4' in method I would also be designated as `Vip Rspo4' in method II.  As we have seen above, we cannot be exactly sure what the calibration is.  Is it perhaps possible that the calibration is nearly perfect?  We can place a kind of upper bound on the precision of the calibration by looking for the \emph{best possible} calibration that is consistent with the data we have observed.  In particular, let $d$ denote the direction of ``perfect calibration'' in which method I and method II agree perfectly.  We can find the value of $q \in \Theta(\hat p,\hat p \hat q)$ which is most extreme in this direction.  
-
-\figgy{
-\figgygr{.8}{../images/bestq}
-\caption{The value of $q$ that yields the most precise correspondence between the two cell types while remaining consistent with the observed data.  This gives a kind of upper bound on how well the methods may be calibrated.  As we have seen throughout, there is an extent to which we simply cannot be sure what the calibration is.  Within all this uncertainty, this figure shows something like the rosiest possible picture of how well the methods might be calibrated.  The strong diagonal components in this calibration show a good correspondence, i.e. cells designated as a particular type under method I are likely to be associated with the same type in method II.  We caution that there is no reason to suppose that this \emph{is} the true calibration, but this figure shows that the data does not rule out that possibility.\label{fig:bestq}}
-}
-
-We show this `best possible $q$' in Figure \ref{fig:bestq}.  The result is very encouraging: this best $q$ suggests a strong calibration between the two methods.  We emphasize that our method does not prove this calibration by any means; as we have seen, the data only allow us to know that the calibration up to a considerable degree of uncertainty.  However, we can conclude that the observed data does not \emph{rule out} the possibility that the methods are actually quite well calibrated on the whole.  Of course, even for this best $q$ we do see certain miscalibrations that might be worth further investigation.  For example, it appears that cells designated as `Vip Serpinf1' by method I might be designated as type `Lamp5 Slc35d3' by method II.  
-
+Finally, the MLM provides quantitative values to give a sense for the the error in our estimators, namely $\Delta_p,\Delta_q,\Delta_h,\bar d$.  These can be difficult to interpret because they are single numerical quantities that summarize error in the whole of $p,q,h$.  As we have seen from our visualizations, certain aspects of $q$ may be fairly tightly identified with very little error whereas others may not be clear at all.  Numerical figures must somehow ``average'' over all these complications.  For this reason, the qualitative visualizations may be more helpful.  However, if a quantitative measurement is needed, they are readily available: we find that $\Delta_p=6.7,\Delta_q=50.3,\Delta_h=3.7,\bar d=18.0$.  
 
 \section{Conclusions}
 
 When joint measurement is impossible, it can be difficult to calibrate two methods against each other or understand how they may be related.  Here we show that a simple Markov assumption can make it possible to actually learn quite a lot.  Although the exact relationship may not be identifiable, we can rigorously bound our uncertainty.  We have proposed the Markov Link Method as procedure to estimate the calibration and understand our uncertainty regarding that estimate.  We investigated a real-world calibration problem; the MLM gave bounds on the accuracy of the calibration and also the suggested directions for future experiments to further refine our uncertainty about this calibration.  Code is published at https://github.com/jacksonloper/markov-link-method, including a tutorial-style ipython notebook detailing every calculation used in this paper.
 
-The Markov assumption is of course not the only one that we could have used, and may not be valid in every case; future work may be to investigate others.  For example, it has been speculated that some cell types tend to die more often in one experimental modality than another, and these cells are simply excised from the data without comment.  This would violate our assumptions.  However, assuming this death rate can be roughly measured, it can be adjusted for, yielding a different but equally meaningful assumption about the data.  Indeed, if the MLM method gives insensible results, this could actually serve as a useful clue that this disproportionate cell death is happening.
+The Markov assumption is of course not the only one that we could have used, and may not be valid in every case; future work may be to investigate others.  For example, it has been speculated that some cell types tend to die more often in one experimental modality than another, and these cells are simply excised from the data without comment.  This would violate our assumptions.  However, assuming this death rate can be roughly measured, it can be adjusted for, yielding a different but equally meaningful assumption about the data.  Indeed, if the MLM gives insensible results, this could actually serve as a useful clue that this disproportionate cell death is happening.
 
-Another potential direction for future work is suggested by the `nxx' types found in method II of our empirical investigation.  These types are meant to indicate some uncertainty about the exact cell type.  Each one is associated with a family of cell types.  Our analysis did not need to rely on this information to proceed.  However, making better use of it could considerably improve our results.  Developing a rigorous framework to incorporate these kinds of structured data would be a worthy endeavor.
+Once we accept that what we're interested in may not be fully identifiable, any of a wide variety of assumptions can help us obtain practical bounds.  Although we may not be able to learn exactly what we want, we can learn a set of possibilities.  By probing this set carefully, we can learn what the data actually has to say and what experiments we need to do to learn more.
 
-Once we accept that what we're interested in may not be fully identifiable, any of a wide variety of assumptions can help us obtain practical bounds.  Although we may not be able to learn exactly what we want, we can learn a set of possibilities.  By probing this set carefully, we can learn what the data actually has to say and what experiments we need to do to learn more.  
+\section{The Markov Link Method}
+
+\label{sec:mlm}
+
+Here we describe in detail the Markov Link Method, the identifiability problems which it must overcome, and some theoretical guarantees for the method.  For the benefit of the reader, we repeat the basic inputs to the method:
+
+\begin{itemize}
+    \item Samples $(\ell_1,X_1)\cdots (\ell_n,X_n)$ sampled such that $\mathbb{P}(X_i=x|\ell_i=\ell)= p^*(x|\ell)$
+    \item Samples $(\ell_{n+1},Y_{n+1})\cdots (\ell_{n+m},Y_{n+m})$ sampled such that $\mathbb{P}(Y_i=x|\ell_i=\ell)= h^*(x|\ell)$
+\end{itemize}
+
+We assume that $\ell,X,Y$ are discrete random variables with finite support. We also assume that the MLM assumption holds, i.e.\ $h^*(x|\ell)=\sum_y p^*(x|\ell)q^*(x|y)$ for some unknown $q^*$.
+
+The method proceeds as follows:
+
+\begin{enumerate}
+\item Summarize the input data, with two matrices:
+%
+\begin{align*}
+N^X_{\ell x} &= |\{i\leq n:\ \ell_i=\ell,X_i=x\}|\\
+N^Y_{\ell y} &= |\{i>n:\ \ell_i=\ell,Y_i=x\}|
+\end{align*}
+%
+That is, $N^X_{\ell x}$ indicates the number of specimens from subpopulation $\ell$ which yielded measurement $x$ under tool I.  Likewise $N^Y_{\ell y}$ indicates the number of specimens from subpopulation $\ell$ which yielded measurement $y$ under tool II. 
+
+\item Produce point estimates. 
+\begin{itemize}
+\item For $p$, we use a simple pseudocount estimator, namely
+\[
+\hat p = \argmax_p \sum_{\ell,x} (N^X_{\ell x}+1) \log p(x|\ell)
+\] 
+\item For $h$, we take a similar idea.  However, in this case, we make use of the Markov Link Assumption to increase the effficiency of our estimator.  Let $S$ denote the set of values of $h$ which are consistent with $p$ and the Markov Link Assumption, i.e.
+\[
+S=\left\{h:\ \exists q:\ \sum_x \hat p(x|\ell)q(y|x)=h(y|\ell) \quad \forall \ell,y\right\}
+\]
+And then we define
+\[
+\hat h = \argmax_{h\in S} \sum_{\ell,y} (N^Y_{\ell y}+1) \log h(x|\ell)
+\] 
+\item Finally, we estimate $q$.  Towards this end, we define $\Theta$ as the set of values of $q$ which are consistent with $p,h$ and the Markov Link Assumption.  That is, let 
+\begin{align}\label{eq:thetadef}
+\Theta(p,h) \triangleq \left\{q:\ \sum_x p(x|\ell)q(y|x)= h(y|\ell) \quad \forall \ell,y \right\}
+\end{align}
+Any $q$ inside $\Theta$ should be considered equally plausible, since it yields the same distribution on the observable data.  However, for the purposes of determining variability due to lack of data, we take a very particular estimator of $q$, namely the so-called ``analytic center'' of $\Theta$.
+\[
+\hat q = \argmax_{q\in\Theta(\hat p,\hat h)} \sum_{x,y} \log q(y|x)
+\]
+This gives us a single estimator for $q$, which we will use below.  
+\end{itemize}
+Several remarks are in order about these point estimates.  
+\begin{itemize}
+\item The pseudocount.  An obvious alternative to the pseudocount estimator would be to simply use the maximum likelihood estimator, i.e. $\argmax_p \sum_{\ell,x} N^X_{\ell x} \log p(x|\ell)$.  However, in the datasets we examined, there was simply not enough data to support this kind of estimator.  Some of the subpopulations had very few samples, requiring some degree of smoothing.  Pseudocounts are just one among a host of ways this smoothing could have been achieved.  However, we chose pseudocounts because they are easy to interpret both mathematically and by scientists.  We simply find the maximum likelihood estimator \emph{as if} the data had been that given by the pseudocount-augmented values.  We here chose a pseudocount value of 1, but in practice an expert can meaningfully evaluate what kinds of pseudocounts each sample category should take.  
+%
+\item We do use the Markov Link Assumption to estimate $h$.  We note that an alternative way to estimate $h$ would be to simply use a pseudocount estimator just as we did to estimate $p$.  However, if the Markov Link Assumption holds, we should be able to use this fact to get a superior estimators by enforcing this constraint.  We saw in simulations that this does indeed occur at least in some cases.
+%
+\item We don't use the Markov Link Assumption to estimate $p$.  The process outlined above follows three distinct stages: estimate $p$, estimate $h$, then estimate $q$.  This process has the advantage that each individual problem is convex, with a unique solution which can be found with classic methods from convex optimization (see Appendix \ref{sec:convexopt} for details).  However, there is a fundamentally different way we could seek our point estimates.  We could try to \emph{simultaneously} optimize all of these objects to maximize the likelihood of the observables (subject to the Markov Link Assumption).  Unfortunately, we were unable to get rigorous guarantees for the asymptotic properties of such a method.  It is for this reason that we took this multi-stage approach.
+\end{itemize}
+%
+\item Produce quantitative estimates for the variance of our estimators, using the bootstrap.  We a series of $K$ surrogate datasets $(N^{X,(1)},N^{Y,(1)})\cdots (N^{X,(K)},N^{Y,(K)})$ by sampling with replacement within each subpopulation from the original data.  For each surrogate $(N^{X,(i)},N^{Y,(i)})$ we use a procedure similar to the one described above to produce point estimates $\hat p^{(i)},\hat q^{(i)},\hat h^{(i)}$.  The only difference between the bootstrap point estimators and the original point estimators is that we use no pseudocount for the bootstrap estimators.  This is because the pseudocount can in some cases make the estimator variance look smaller than it is.  Finally, for each variable, $p,q,h$, we compute the average total variation distance between our original point estimates and these bootstrap estimates.    Here by total variation distance we mean for example that $\TV{\hat q- \hat q^{(i)}} \triangleq \frac{1}{2}\sum_{x,y}|\hat q(y|x)-\hat q^{(i)}(y|x)|$.  We denote these variation distance averages by $\Delta_p,\Delta_q,\Delta_h$.
+%
+\item Produce quantitative estimates for our uncertainty about $q^*$ due to identifiability issues.  In some cases it may be that $q^*$ is not identifiable from the data.  That is, even in the limit of an infinite number of specimens, it may be impossible to determine the exact value of $q^*$.  This is because we can only observe $q^*$ through the distribution on $Y|\ell$ (i.e.\ $h^*$).  Thus, if there are two values $q_1,q_2$ such that $h^*(y|\ell)=\sum_x p^*(x|\ell)q_1(y|x)=\sum_x p^*(x|\ell)q_2(y|x)$, then without joint measurement on $(X,Y)$ we would never be able to tell if $q^*=q_1$ or $q^*=q_2$.  Nonetheless, even if $q^*$ cannot be determined exactly, it is possible to put bounds on what values of $q^*$ are consistent with the data: the Markov Link Method assumption does say that $q^* \in \Theta(p^*,h^*)$, where $\Theta$ is given by Equation (\ref{eq:thetadef}).  This can tell us something about what the calibration $q^*$ looks like.  What is more, subject to mild conditions, we can show that in the limit of infinite data, $q^*$ is very close to some point in $\Theta(\hat p,\hat q)$.  This is the subject of Theorem \ref{thm:mainthm} in Appendix \ref{sec:mainthm}.  To understand our uncertainty about $q^*$ due to identifiability, we must therefore understand the size of this set.  To do so, we use the simple total variation diameter approximation procedure (see Appendix \ref{sec:diameterestimation} for details) to estimate the diameter for the set associated with each of our bootstrap samples, $d^{(i)}\approx \mathrm{diam}(\Theta(\hat p^{(i)},\hat h^{(i)}))$.  To estimate the error due to identifiability in our particular case, we use the median of these diameter estimates, which we denote by $\bar d$.
+%
+\item Produce qualitative variability visualizations.  Fix any value of $x$.  Now consider any bootstrap estimate $\hat p^{(i)},\hat q^{(i)},\hat h^{(i)}$.  For each $y$ we can compute the value of $q\in \Theta(\hat p^{(i)},\hat q^{(i)})$ with the maximal value of $q(y|x)$.  We call this an ``extremal bootstrap estimate,'' \
+\[
+q^{(i,x,y)} = \sup_{q\in\Theta(\hat p^{(i)},\hat q^{(i)})} q(y|x)
+\]
+We can look at all of these estimates simulatenously by forming a square matrix $M_{y_1,y_2} = q^{(i,x,y_1)}(y_2|x)$ and plotting this matrix as a heatmap.  If there are no identifiability issues concerning the estimation of $q^*$, every row of the matrix will be the same.  If there are significant identifiability issues, different rows may be quite different.  We can repeat this process for each bootstrap estimate; this yields a very tall and thin matrix formed by stacking all the matrices together.  If there is sufficient data, we expect each block of this matrix to be approximately the same (since the bootstrap resampling will have little effect).  Thus, if there is sufficient data and there are no identifiability issues every row of the entire tall matrix will be similar.  For visualization, we can squish the matrix so that each row is much thinner than each column.  The result is a single image that captures the variability for one particular row of $q$.  
+
+\end{enumerate}
+
+\section{Relation to prior work}
+
+Our main goal is to achieve calibration without joint measurement.  The main technical obstacle is what is known in the statistics world as an `identifiability problem.'  Due to this problem, we often simply \emph{cannot} directly estimate the calibration that we are interested in.  The calibration is simply not ``identifiable.''  Nonetheless, all is not lost.  Our main contribution is to show that one can bound the extent of this identifiability problem.  In short, the fundamental problem cannot generally be vanquished, but we can put it in its place.  
+
+Our identifiability analysis stands on the shoulders of a long history of turning probabilistic assumptions into bounds on unidentifiable parameters.  The core idea of the MLM is to take an assumption (the `Markov Link assumption,' which we will define shortly) and use it to place bounds on an unidentifiable quantity (namely the calibration $q^*$).  When these bounds are fairly tight on all sides, we see that much can be learned even though what we want isn't identifiable.  Much of the prior literature in this kind of direction comes from research into causality.  For example, in \cite{bonet2001instrumentality} Bonet uses polytopes not unlike the ones seen here to explore whether a variable can be used as an instrument.  The famous Clauser-Horne-Shimony-Holt inequality was designed to help answer causality questions in quantum physics, but it also sheds light on what distributions are consistent with certain assumptions \cite{clauser1969proposed}.  Indeed the physics literature has contributed many key inequalities (cf. \cite{chaves2014inferring}, \cite{kela2017semidefinite}, and the references therein).  Perhaps the closest work to this one would be \cite{makarov1982estimates}, which used two marginal distributions to get bounds on a property of the joint distribution (namely the distribution of the sum).  We advance this approach to a more general-purpose technique, both by using many subpopulations to refine our estimates and by considering the entire space of possible joint distributions instead of simply a particular aspect of the joint.  
+
+It is perhaps worth mentioning that the actual theorem presented here has probably been derived before (although we did not find it in our review of the literature).  Other results in the same flavor as the one presented here might also find a practical use for modern problems.  There is a treasure-trove of ideas in the causality literature; this wealth has not yet been brought fully to bear on the challenging and important problems of calibration for modern experimental modalities.  Our primary intention with this article is to bring attention to the practical utility of these kinds of result.
 
 \bibliographystyle{unsrt}
 \bibliography{refs}
 
 \appendix
 
+\section{Mathematical results}
 
-\section{Proof of the theorem}
-
-\label{sec:proof}
-
-For the benefit of the reader, we here repeat the statement of our theorem in more explicit terms.  
+\label{sec:mainthm}
 
 \begin{itemize}
-\item Let $\UN{\cdot}$ denote the uniform norm (i.e.\ the maximum absolute value) and $\EN{\cdot}$ denote the Euclidean norm (i.e.\ the square root of the sum of the squares).  In the case of matrices, this Euclidean norm goes by the name of the Frobenius norm.  Recall that in this norm matrices satisfy a Cauchy-Schwarz like equality, $\EN{pq}\leq\EN{p}\EN{q}$.  Also recall that $\UN{a} \leq EN{a} \leq \sqrt{n}\UN{a}$ where $n$ is the number of entries in $a$.
+\item Let $\UN{\cdot}$ denote the uniform norm (i.e.\ the maximum absolute value) and $\EN{\cdot}$ denote the Euclidean norm (i.e.\ the square root of the sum of the squares).  In the case of matrices, this Euclidean norm goes by the name of the Frobenius norm.  Recall that in this norm matrices satisfy a Cauchy-Schwarz like equality, $\EN{pq}\leq\EN{p}\EN{q}$.  Also recall that $\UN{a} \leq \EN{a} \leq \sqrt{n}\UN{a}$ where $n$ is the number of entries in $a$.
 \item Let $T_{a,b}$ denote the transition matrix polytope, i.e. the set of $a\times b$ matrices whose rows sum to 1 and whose entries are all positive.
 \item Let $|\Omega_\ell|,|\Omega_X|,|\Omega_Y| \in \mathbb{N}$.
 \item Let $p^*\in T_{|\Omega_\ell|,|\Omega_X|}$.
 \item Let $q^*\in T_{|\Omega_X|,|\Omega_Y|}$.
+\item Let $h^*=p^*q^*$.  Here by $p^* q^*$ we intend the matrix multiplication of $p^*$ and $q^*$.  We will go back and forth between thinking of $p^*,q^*,h^*$ as matrices and thinking of them as distributions.
 \item We require the matrix $q^*$ has strictly positive entries, $q^*_{xy}\geq c>0$.
-\item We require that the rows of $p^*$ are linearly independent.  
-\item Let $\hat p$ denote an empirical transition matrix drawn by obtaining $N_{X,\ell}$ samples for each row of $p^*$, i.e. we have samples $(\ell_1,X_1) \cdots (\ell_1,X_n)$ such that $\mathbb{P}(X_i=x) = p^*_{\ell_i,x}$, $N_{X,\ell}=\sum_{i=1}^n \mathbb{I}_{\ell_i=\ell}$, and $\hat p_{\ell x} = \sum_{i=1}^n \mathbb{I}_{X_i=x,\ell_i=\ell} / N_{X,\ell}$. 
-\item Let $\hat h$ denote an empirical transition matrix drawn by obtainin $N_{Y,\ell}$ samples for each row of $h^*=p^*q^*$.  
+\item For each $\ell$ draw $n_\ell$ samples from $p^*_\ell$ and $m_\ell$ samples from $h^*_\ell$.  Let $N^X_{\ell x},N^Y_{\ell y}$ summarize the resulting number of each kind of sample we obtained.
+\item We require that there are fewer rows of $p^*$ than columns, and each row is linearly independent.  If there are more rows than columns, then there is generally no identifiability issue so the theorem below is not relevant.  If there are fewer rows than columns but the rows are not independent, then the result applies after enough rows are combined. 
+\item Let $\hat p_{\ell x} = (N^{X}_{\ell,x}+1) / (\sum_{x'}N^{X}_{\ell,x'}+1)$
+\item Let
+\[
+L(q,\kappa) = \sum_{y,\ell} (N^Y_{\ell y}+1) \log \left(\sum_x \hat p(x|\ell)q(y|x)\right)
+    +\kappa\sum_{x,y} \log q(y|x)
+\]
+and take $\hat q = \lim_{\kappa\rightarrow 0} \argmax_q L(q,\kappa)$.
+\item Let $\hat \Theta=\{q:\ \hat p\hat q=\hat pq\} \cap T_{|\Omega_X|,|\Omega_Y|}$.
 \end{itemize}
-
-Now fix any $\kappa>0$.  Let
-\begin{align}
-\hat q = \argmax_q \left(\sum_\ell N_{Y,\ell}\sum_{y}\hat h(y|\ell)\log\left(\sum_{x}\hat p(x|\ell)q(y|x)\right) + \kappa \sum_{xy} \log q(y|x)\right)\label{eq:mindef}
-\end{align}
-and $\hat \Theta=\{q:\ \hat p\hat q=\hat pq\} \cap T_{|\Omega_X|,|\Omega_Y|}$.  
 \vspace{.1in}
-\begin{thm}
-If $N_{X,\ell},N_{Y,\ell}\rightarrow \infty$ in such a way that $N_{Y,\ell'}/\sum_{\ell}N_{Y,\ell} \geq \rho>0$ for each $\ell'$, then $\inf_{q\in \hat\Theta} \UN{q^*-q}\rightarrow 0$ in probability.
+
+
+\begin{thm}\label{thm:mainthm}
+If $n_\ell, m_\ell\rightarrow \infty$ in such a way that $m_\ell/m_{\ell'} \geq \rho>0$ for each $\ell,\ell'$, then $\inf_{q\in \hat\Theta} \UN{q^*-q}\rightarrow 0$ in probability.
 \end{thm}
 
 \begin{proof}
-It is well-known that $\hat p\rightarrow p^*$ in probability (in both the uniform or the Euclidean norm, which are of course equivalent in this case).  It is easy (albeit technical) to see that the same goes for $\hat p\hat q\rightarrow h^*$ (see Lemma \ref{lem:easyconsistency}).  Thus, intuitively, the difficulty is this: by ensuring $\UN{\hat p - p^*},\EN{\hat p - p^*},\UN{\hat p\hat q - h^*},\EN{\hat p\hat q - h^*}$ sufficiently small, can we find some $\tilde q\in \hat \Theta$ so that $\UN{\tilde q - q^*}$ is arbitrarily small?  It turns out we can.
+It is well-known that $\hat p\rightarrow p^*$ in probability (in both the uniform or the Euclidean norm, which are of course equivalent in this case).  It is easy to see that the condition on $m_\ell$ together with the strict positivity of $q^*$ guarantee that the same goes for $\hat p\hat q\rightarrow h^*$.  Thus, intuitively, the difficulty is this: by ensuring $\EN{\hat p - p^*},\EN{\hat p\hat q - h^*}$ sufficiently small, can we find some $\tilde q\in \hat \Theta$ so that $\EN{\tilde q - q^*}$ is arbitrarily small?  It turns out we can.
 
-Recall that $c>0$ is the smallest value of $q^*_{xy}$.  Fix any $\epsilon<c, p^*,q^*$.  Let the right inverse of a matrix be defined by $a^\dagger \triangleq a^T (aa^T)^{-1}$.  Note that since $p^*$ has linearly independent rows, this is well-defined and continuous in a small neighborhood around $p^*$.  Let $M=\EN{(p^*)^\dagger}$.  Find $\delta$ small enough so that if $\UN{p-p^*}<\delta$ then $\EN{p^\dagger}<2M$.  Taking a further smaller $\delta$ if necessary, ensure that if $\UN{p^*-p}<\delta$ then $\EN{p^*-p}$ is less than $\epsilon / 4M\sqrt{|\Omega_X||\Omega_Y|}$.  
+There is a simple method to find such a $\tilde q$: we take $\tilde q$ to be the Euclidean projection of $q^*$ to the plane defined by $\{q:\ \hat p\hat q=\hat pq\}$.  If $p^* \approx \hat p$ and $\hat p \hat q \approx p^* q^*$, it is easy to see that we can can ensure this projection will not carry us a very large distance, and so $\tilde q$ and $q^*$ will be close, as desired.  However, it might carry us to a point outside of the transition matrix polytope; in particular, after projection we might see some negative values.  Fortunately, because we have insisted that the truth is strictly positive, we are guaranteed that this is not a problem in the asymptotic limit.
+
+Let us make this argument formal.  We haved defined $c>0$ as the smallest value of $q^*_{xy}$.  Fix any $\epsilon<c, p^*,q^*$.  Let the right inverse of a matrix be defined by $a^\dagger \triangleq a^T (aa^T)^{-1}$.  Note that since $p^*$ has linearly independent rows, this is well-defined and continuous in a small neighborhood around $p^*$.  Let $M=\EN{(p^*)^\dagger}$.  Find $\delta$ small enough so that if $\UN{p-p^*}<\delta$ then $\EN{p^\dagger}<2M$.  Taking a further smaller $\delta$ if necessary, ensure that if $\UN{p^*-p}<\delta$ then $\EN{p^*-p}$ is less than $\epsilon / 4M\sqrt{|\Omega_X||\Omega_Y|}$.  
 Now fix any $\hat p,\hat q$ with $\UN{\hat p-p^*}<\delta$ and $\EN{\hat p \hat q - p^*q^*}<\epsilon/4M$.  Take
 \[
 \tilde q = q^* + \hat p^\dagger \hat p (\hat q - q^*)
@@ -397,42 +408,38 @@ Thus $\UN{\tilde q - q^*}<\epsilon$ and $\tilde q \in \hat \Theta$.
 In conclusion, we see that by taking $\hat p$ sufficiently close to $p^*$ and $\hat p \hat q$ sufficiently close to $p^*q^*$, we can ensure that the set $\hat \Theta$ contains a close which is arbitrarily close to the true $q^*$.  Since $\hat p$ and $\hat p \hat q$ are themselves consistent estimators, this completes the proof.
 \end{proof}
 
-\begin{lem}
-\label{lem:easyconsistency} If $N_{X,\ell},N_{Y,\ell}\rightarrow \infty$ in such a way that $N_{Y,\ell'}/\sum_{\ell}N_{Y,\ell} \geq \rho>0$ for each $\ell'$, then $\UN{p^*q^*-\hat p\hat q},\EN{p^*q^*-\hat p\hat q}\rightarrow 0$ in probability.
-\end{lem}
-\begin{proof}
-Our first task is to make a short study of the continuity of KL divergences on categorical distributions when the probabilities are bounded away from zero.  Recall that we have insisted $q^*_{xy}\geq c>0$ for every $x,y$ -- and this also means $(pq^*)_{\ell y}\geq c$ for every $\ell,y$, since each row of $p$ is itself a probability distribution.  Moreover, observe that the KL-divergence on $|\Omega_Y|$-dimensional distributions, $\kldiv{\hat r}{\tilde r} \triangleq \sum_{y} \hat r_y \log \hat r_y / \tilde r_y$, is \emph{uniformly} continuous on the space of such distributions whose minimum probability is greater than any fixed positive constant.   It follows that the map $h,p,q \mapsto D(h_\ell||(pq)_\ell)$ is also uniformly continuous on a space where $h$ and $q$ are strictly greater than some fixed positive constant.   
+\section{Total Variation Diameter Estimation}
 
-With this in hand, the remainder of the proof follows naturally, using the well-known results that empirical distributions are consistent, i.e.\ $\hat p \rightarrow p^*$ and $\hat h \rightarrow p^*q^*$ in probability.
+\label{sec:diameterestimation}
 
-Fix any $\epsilon,\pi$.  Let $\delta$ the modulus of continuity in the norm $\UN{\cdot}$ at level $\epsilon\rho$ for the map $h,p,q \mapsto \kldiv{h_\ell}{(pq)_\ell}$ restricted to the domain where $h,q>c/2$.  Select $N$ large enough so that $\frac{1}{N_{Y,\ell}} \kappa |\Omega_X||\Omega_Y| \log \frac{1}{c} < \epsilon$ for each $\ell$ and so that with probability at least $\pi$ we have that $\hat h,\hat p$ so that $\UN{\hat h-p^*q^*},\UN{\hat p-p^*}\leq \delta,\UN{\hat h - p^*q^*}<c/2$. Then, with probability $\pi$, we must have
-%
+We follow the algorithm of \cite{brieden2001deterministic} in estimating of the diameter of a convex polytope $C$.  We note that diameter estimation is a difficult problem, and if the polytope is particularly pathological and high-dimensional it may be quite difficult to estimate the diameter accurately.  Nonetheless, it is a practical solution to the difficulty at hand.  
+
+Let $C \in \mathbb{R}^{n}$ denote a convex polytope (note that the $n$ here does not correspond to the number of samples $n$ in the main body of this paper).  We will be interested in a certain kind of diameter of $C$, namely
 \begin{align*}
-|\kldiv{\hat h_\ell}{(\hat p \hat q)_\ell} - \kldiv{h^*_\ell}{(\hat p \hat q)_\ell}| \leq \rho \epsilon \\
-\kldiv{\hat h_\ell}{(\hat p q^*)_\ell} = |\kldiv{\hat h_\ell}{(\hat p q^*)_\ell} - \kldiv{(p^*q^*)_\ell}{(p^* q^*)_\ell}| \leq \rho\epsilon 
+\diam(C) =& \frac{1}{2}\sup_{x,y\in\Theta} \sum_{i=1}^n |x_i-y_i| \\
+              =& \frac{1}{2}\max_{z\in\{-1,1\}^n} \left(\sup_{x,y\in\Theta} \sum_{i=1}^n z_i(x_i-y_i)\right)\\
+              =& \frac{1}{2}\max_{z\in\{-1,1\}^n} \left((\sup_{x\in\Theta} z \cdot x) - (\inf_{x\in\Theta} z \cdot x) \right)
 \end{align*}
-%
-Now, since $\hat q$ is defined as the maximizer of a certain quantity (Equation \ref{eq:mindef}), we may be sure that it is greater than the same quantity evaluated at $q=q^*$.  That is,
-%
-\begin{align*}
-0 \leq& \sum_\ell N_{Y,\ell}\sum_{y}\hat h(y|\ell)\log\frac{\sum_{x}\hat p(x|\ell)\hat q(y|x)}{\sum_{x}\hat p(x|\ell)q^*(y|x)} + \kappa \sum_{xy} \log \frac{\hat q(y|x)}{q^*(y|x)}\\
- =& \sum_\ell N_{Y,\ell}\left(\kldiv{\hat h_\ell}{(\hat pq^*)_\ell} - \kldiv{\hat h_\ell}{(\hat p\hat q)_\ell}\right) + \kappa \sum_{xy} \log \frac{\hat q(y|x)}{q^*(y|x))}
-\end{align*}
-%
-Applying our continuity results, it follows that
-%
-\begin{gather*}
- \sum_\ell N_{Y,\ell}\left(\kldiv{\hat h^*_\ell}{(\hat p\hat q)_\ell}\right)  \leq 2\left(\sum_\ell N_{Y,\ell}\right)\epsilon  + \kappa |\Omega_X||\Omega_Y| \log \frac{1}{c} 
-\end{gather*}
-%
-Note that the left-hand summands are all positive.  So, in particular, it follows that for each $\ell'$, applying the uniformity condition $\rho$, we have
-%
-\begin{gather*}
-\kldiv{\hat h^*_{\ell'}}{(\hat p\hat q)_{\ell'}}  \leq 2\epsilon  + \frac{1}{N_{Y,\ell'}} \kappa |\Omega_X||\Omega_Y| \log \frac{1}{c} \leq 3\epsilon
-\end{gather*}
 
-That is, we have shown convergence of probability in the KL sense: for any $\epsilon,\pi$ we can find $N$ high enough so that $\kldiv{\hat h^*_{\ell'}}{(\hat p\hat q)_{\ell'}}<\epsilon$ with at least probability $\pi$.  This, in turn yields convergence in probability in the Euclidean or uniform metrics by Pinsker's inequality. 
-\end{proof}
+For any fixed $z$, the inner maximization and minimization problems can be solved using linear programming.  We can therefore estimate the diameter by taking every possible $z$ and solving this problem.  In practice, this may be computationally prohibitive.  If so, we can randomly subsample values of $z$ to obtain a lower bound on the diameter.
+
+We can apply this to estimate the diameter of our set of interest, namely
+\[
+\Theta(p,h) = \left\{q:\ \sum_x p(x|\ell)q(y|x)=h(y|\ell)\right\}
+\]
+In this case $\Theta$ is a space of conditional probability distributions.  However, the constraints that define $\Theta$ are all linear, and so the same method can be applied.
+
+\section{Convex optimization problems}
+
+\label{sec:convexopt}
+
+To be determined
+
+\section{Permutation matrices are perfectly identified}
+
+\label{sec:miracle}
+
+To be written
 
 \end{document}
 

@@ -1,7 +1,13 @@
 from . import estimation
 from . import exploration
+from . import mlm
+from . import misc
+from . import methodI
+from . import methodII
+from . import methodIII
+from . import majorization
 
-train_q = estimation.train_q
-sample_bootstrap_rux = exploration.sample_bootstrap_rux
-train_test_split = exploration.train_test_split
-get_rux_tildetheta=exploration.get_rux_tildetheta
+point_estimates = mlm.point_estimates
+bootstrap = mlm.bootstrap
+diameter_estimates = mlm.diameter_estimates
+qualitative_one_row = mlm.qualitative_one_row
