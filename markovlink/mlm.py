@@ -2,74 +2,36 @@ from . import estimation
 from . import exploration
 from . import misc
 import numpy as np
-from . import majorization
+from . import minorization
 
-def point_estimates(Nlx,Nly,pseudocount=1.0):
+def hypothesis_test(Nlx,Nly,alpha=.05,maxtime=120):
+    p,q=point_estimates(Nlx,Nly)
+    PPF=minorization.LLR(Nlx,Nly,p,p@q)
+    PPF = minorization.estimate_PPF(Nlx,Nly,alpha)
+
+    p,q,niter=minorization.find_feasible_point(Nlx,Nly,PPF,maxtime=maxtime)
+
+    return "fail to reject"
+
+def point_estimates(Nlx,Nly,maxtime=10):
     '''
-    Get point estimates by the Markov Link Method
-    '''
-
-    p = (Nlx + pseudocount) / np.sum(Nlx+pseudocount,axis=1,keepdims=True)
-
-    kappa=.001
-    q=majorization.train_q_by_majorization(p,Nly+pseudocount,kappa,n_train=500)
-
-    h=p@q
-
-    return p,q,p@q
-
-def bootstrap(Nlx,Nly,phat,qhat,n_straps=50,verbose=False):
-    '''
-    Draws surrogate datasets for Nlx and Nly, with replacement, and then gets point estimates
-    for the surrogate datasets using the Markov Link Method.
-
-    Also estimates the Deltap,Deltaq,Deltah
+    Get point estimates for the calibration
     '''
 
-    hhat=phat @ qhat
+    # find a q inside an approximate 95% confidence interval
+    PPF = minorization.estimate_PPF(Nlx,Nly,.05)
+    p,q,niter=minorization.find_feasible_point(Nlx,Nly,PPF,maxtime=maxtime)
 
-    straps=[]
+    # keep seeking a q that better optimizes the likelihood of the data,
+    # for twice the number of iterations it took to find the feasible point:
+    p,q = minorization.train_mlm_minorized(Nlx,Nly,p,q,0,1,niter*2)
 
-    dsts=np.zeros((n_straps,3))
+    return p,q
 
-    if verbose:
-        misc.pnn("%d bootstraps:"%n_straps)
-    for i in range(n_straps):
-        if verbose:
-            misc.pnn(i)
-        Nlx2=exploration.resample(Nlx)
-        Nly2=exploration.resample(Nly)
+def uncertainty_assessment(Nlx,Nly,alpha=.05,verbose=True,n_extremals=50):
+    '''
+    Get a measure of our uncertainty about the calibration, in the form of a collection of 
+    calibrations lying within an approximate (1-alpha) confidence interval
+    '''
 
-        p,q,h =point_estimates(Nlx2,Nly2,pseudocount=0.0)
-
-        dsts[i,0] = .5*np.sum(np.abs(p-phat))
-        dsts[i,1] = .5*np.sum(np.abs(q-qhat))
-        dsts[i,2] = .5*np.sum(np.abs(h-hhat))
-
-        straps.append(dict(Nlx=Nlx2,Nly=Nly2,estimates=(p,q,h)))
-
-    return straps,np.mean(dsts,axis=0)
-
-def diameter_estimates(straps,verbose=False):
-    diams=[]
-
-    if verbose:
-        misc.pnn("%d bootstraps to consider:"%len(straps))
-    for i,strap in enumerate(straps):
-        if verbose:
-            misc.pnn(i)
-        p,q,h = strap['estimates']
-        diams.append(exploration.diameter_estimation(p,q)[0])
-
-    return diams
-
-def qualitative_one_row(straps,x,verbose=False):
-    Q1Rs=[]
-    if verbose:
-        misc.pnn("%d bootstraps to consider:"%len(straps))
-    for i,strap in enumerate(straps):
-        if verbose:
-            misc.pnn(i)
-        p,q,h = strap['estimates']
-        Q1Rs.append(exploration.qualitative_one_row(p,q,x))
-    return np.array(Q1Rs)
+    return exploration.construct_interval_samples(Nlx,Nly,n_extremals=n_extremals,alpha=alpha,verbose=verbose)

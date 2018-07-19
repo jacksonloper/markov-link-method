@@ -2,12 +2,11 @@ from . import estimation
 from . import exploration
 from . import mlm
 from . import misc
-from . import methodI
-from . import methodII
-from . import methodIII
-from . import majorization
+from . import minorization
+from . import logslines
+from . import polytopes
+from . import centering
 
 point_estimates = mlm.point_estimates
-bootstrap = mlm.bootstrap
-diameter_estimates = mlm.diameter_estimates
-qualitative_one_row = mlm.qualitative_one_row
+uncertainty_assessment = mlm.uncertainty_assessment
+hypothesis_test = mlm.hypothesis_test
