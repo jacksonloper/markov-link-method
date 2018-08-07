@@ -265,14 +265,14 @@ def cvxopt_linprog(c,A_eq,b_eq,initialcondition,gaptol=1e-5,verbose=True):
 
     p("cond=%f"%np.linalg.svd(A_eq)[1].min())
 
-    # first try glpk
-    p("gpkl")
-    rez = cvxopt.solvers.lp(com(c),com(G),com(g_eq),A=com(A_eq),b=com(b_eq),
-                            primalstart=dict(x=com(initialcondition),s=com(initialcondition)),
-                           solver='glpk')
-    if rez['status']=='optimal':
-        p("suc")
-        return np.array(rez['x'])
+    # # first try glpk
+    # p("gpkl")
+    # rez = cvxopt.solvers.lp(com(c),com(G),com(g_eq),A=com(A_eq),b=com(b_eq),
+    #                         primalstart=dict(x=com(initialcondition),s=com(initialcondition)),
+    #                        solver='glpk')
+    # if rez['status']=='optimal':
+    #     p("suc")
+    #     return np.array(rez['x'])
 
     # okay glpk didn't work.  try cvxopt's coneopt
     p("coneopt")
