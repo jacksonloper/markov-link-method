@@ -115,33 +115,42 @@ In the specific case we will focus on, all of the experimental data can be summa
     \item $C_{x,y}$ -- a credible interval which contains the true link parameter $q^*(y|x)$ with high probability
 \end{enumerate}
 %
-To produce these objects we proceeds as follows.  Let $\tilde P(\cdot |\ell) \sim \mathrm{Dirichlet}(N^X_\ell+1)$ and $\tilde H(\cdot |\ell) \sim \mathrm{Dirichlet}(N^Y_\ell+1)$ for each $\ell$.  For any pair $h,h'$ let 
+To produce these estimates for the link, we take a bayesian point of view.  It might seem sensible to start by specifying some prior beliefs about the link $q^*$.  However, the link is in many cases `nonidentifiable';  we describe this problem in detail in Appendix \ref{sec:casestudies}.  One consequence of nonidentifiability is that standard bayesian inferences would have no robustness to our precise choice of prior beliefs.  To avoid these problems, we focus on quantities which can be identified from the data.  In particular,
+\begin{itemize}
+    \item Let $p^*(x|\ell)$ denote the probability that a cell sampled with procedure $\ell$ will have transcriptomic type $x$.  These probabilities can be estimated from the data, $N^X$.
+    \item Let $h^*(y|\ell) \triangleq \sum_x p^*(x|\ell)q^*(y|x)$ denote the probability that a cell sampled with procedure $\ell$ will have morphological type $y$.  These probabilities can be estimated from the data, $N^Y$.
+    \item Let $\Theta(p,h)=\{q:\ h(y|\ell) = \sum_x p(x|\ell)q(y|x)\}$ denote the set of links which are consistent with $p,h$.  Notice that $q^*\in\Theta(p^*,h^*)$, but there may be other links $q\in\Theta(p^*,h^*)$.  Any such link yields the same distribution on what we can observe, $N^X,N^Y$.  Therefore there is simply no way to use data to distinguish among them.  This is the essence of the nonidentifiability problem mentioned above.  So, instead of trying to estimate this inestimable quantity, we will focus on three other quantities which can be identified from data.  Let
+    \begin{itemize}
+        \item $q_{\mathrm{lo},x,y} \triangleq \min_{q\in \Theta(p^*,h^*)} q(y|x)$
+        \item $q_{\mathrm{hi},x,y} \triangleq \max_{q\in \Theta(p^*,h^*)} q(y|x)$ 
+        \item $q_{\mathrm{mid}} \triangleq \argmin_{q\in \Theta(p^*,h^*)} \sum_{x,y} q(y|x)^2$
+    \end{itemize}
+    Note that all three of these optimization problems have unique solutions and would be straightforward to solve if $p^*,h^*$ were known; optimization details can be found in Appendix \ref{sec:optproblems}.  Morever, even when $q^*$ is nonidentifiable, we can still be assured that $q_{\mathrm{lo}}, q_{\mathrm{hi}}$ are identifiable and $q_{\mathrm{lo},x,y} \leq q^*(y|x) \leq q_{\mathrm{hi},x,y}$.  We can also hope that $q_{\mathrm{mid}}$ will provide a single estimate which strikes a middle ground; in particular, $q_{\mathrm{mid}}$ is the link value which is closest to uniform among all links which are consistent with $p^*,h^*$.  
+\end{itemize}  
+To summarize: it may not be possible to estimate $q^*$ from data, but we can always estimate $p^*,h^*$.  We can also compute deterministic functions of $p^*,h^*$ which bound $q^*$, namely $q_{\mathrm{lo}},q_{\mathrm{hi}}$.  We take a Bayesian point of view in estimating $p^*,h^*$.  For prior beliefs, we assume a noninformative uniform prior $\mathbb{P}$, namely
 \[
-D(h|h') = \sum_{\ell,y} h(y|\ell) \log \frac{h(y|\ell)}{h'(y|\ell)}
+\mathbb{P}(p^*,h^*) \propto 1
 \]
-denote the Kullback-Leibler divergence from $h$ to $h'$.  For each $\tilde P,\tilde H$, let $E(\tilde P,\tilde H)$ denote the minimum value of $D(\tilde H|h')$ among all $h'$ such that there exists $q$ satisfying $h'(y|\ell)=\sum_x \tilde P(y|\ell)q(y|x)$.  Let $P,H$ denote variables carrying the distribution of $\tilde P,\tilde H$ after conditioning on $E(\tilde P,\tilde H)=0$.   Let $\Theta(p,h)=\{q:\ h(y|\ell) = \sum_x p(x|\ell)q(y|x)\}$.  We then define the MLM objects as follows:
+Following the bayesian philosophy, we then incorporate new knowledge by conditioning.  We have two important pieces of knowledge we would like to incorporate.  First, we have observed the data, $N^X,N^Y$.  Second, we know from the MLM assumption that there exists \emph{some} value $q^*$ which is consistent with $p^*,h^*$.   To make the second idea formal, let $D(h|h')$ denote the Kullback-Leibler divergence and $G(p,h) = \min_{h':\ \Theta(p,h')\neq \emptyset} D(h|h')$.  $G(p,h)=0$ is a numerical way to indicate that the MLM assumption can hold.  After incorporating this knowledge, we find ourselevs interested in the conditional distribution
+\[
+\mathbb{P}\left(p^*,h^* | N^X,N^Y,G(p^*,h^*)=0\right)
+\]
+We use this posterior to produce estimates for our quantities of interest:
 \begin{enumerate}
-    \item $\hat q\triangleq\mathbb{E}[\argmin_{q\in \Theta(P,H)} \sum_{x,y} q(y|x)^2]$.
-    \item The lower bound of $C_{x,y}$ is defined as the largest number $c$ such that $\min_{q\in \Theta(P,H)} q(y|x) \geq c$ with probability 97.5\%.  Likewise the upper bound is the smallest number $c$ such that $\max_{q\in \Theta(P,H)} q(y|x) \leq c$ with probability 97.5\%.
-\end{enumerate} 
-%
+    \item $\hat q$ is calculated using posterior expectation:
+    \[
+    \hat q \triangleq \mathbb{E}\left[q_{\mathrm{mid}} | N^X,N^Y,G(p^*,h^*)=0\right]
+    \]
+    %
+    \item $C_{x,y}$ is calculated using credible intervals.  For each $x,y$, we define $C_{x,y}$ to be the largest interval such that 
+    \begin{align*}
+    \mathbb{P}\left(q_{\mathrm{lo},x,y} \in C_{x,y} | N^X,N^Y,G(p^*,h^*)=0\right)\geq 97.5\% \\
+    \mathbb{P}\left(q_{\mathrm{hi},x,y} \in C_{x,y} | N^X,N^Y,G(p^*,h^*)=0\right)\geq 97.5\% 
+    \end{align*}
+\end{enumerate}
 Code to compute these objects is published at https://github.com/jacksonloper/markov-link-method, including a tutorial-style ipython notebook detailing every computation made in this paper.
 
-Our approach arises naturally from a Bayesian point of view.  To understand how, first notice that there are several `nuisance parameters' we must consider in order to estimate the link $q^*$.  Let $p^*(x|\ell)$ denote the probability that a cell sampled with procedure $\ell$ will have transcriptomic type $x$ and $h^*(y|\ell) \triangleq \sum_x p^*(x|\ell)q(y|x)$ denote the probability such a cell will have morphological type $y$.  Note that the distribution of the data $N^X,N^Y$ is entirely determined by $p^*,h^*$.   In particular, if someone changed $q^*$ without changing $p^*,h^*$ there would be no way for us to know.  If this can occur, $q^*$ is said to be `nonidentifiable.'   Therefore, instead of trying to directly estimate $q^*$ (which may be impossible to accurately estimate) we focus on three quantities which can be estimated from data:
-%
-\begin{align*}
-q^*_{\mathrm{mid}} &\triangleq \argmin_{q\in \Theta(p^*,h^*)} \sum_{x,y} q(y|x)^2\\
-q^*_{\mathrm{lo},x,y} &\triangleq \min_{q\in \Theta(p^*,h^*)} q(y|x) \\
-q^*_{\mathrm{hi},x,y} &\triangleq \max_{q\in \Theta(p^*,h^*)} q(y|x) 
-\end{align*}
-%
-Note that all three of these optimization problems have unique solutions and would be straightforward to solve if $p^*,h^*$ were known; optimization details can be found in Appendix \ref{sec:optproblems}.  Moreover, regardless of any identifiability issues for $q^*$ itself, the objects $q^*_{\mathrm{lo},x,y}$ and $q^*_{\mathrm{hi},x,y}$ are always identifiable for every $(x,y)$ and define bounds on the true value of $q^*(y|x)$.
-
-The MLM algorithm therefore adopts a Bayesian point of view to estimate $q^*_{\mathrm{mid}}$ and create a credible interval for $q^*_{\mathrm{lo},x,y},q^*_{\mathrm{hi},x,y}$.  We begin with uniform prior beliefs for the parameters of $p^*,h^*$.  That is, our prior is that $p^*(\cdot|\ell),h^*(\cdot|\ell)$ carry $\mathrm{Dirichlet}(1)$ distributions for each $\ell$.  Following the Bayesian philosophy, we would like to incorporate any additional knowledge through conditioning.  We have two important pieces of knowledge we would like to incorporate: that the MLM assumption holds (i.e.\ there is some $q^*$ so that $\sum_x p^*(x|\ell)q^*(y|x)=h^*(y|\ell)$) and we have observed the data $N^X,N^Y$.  By conditioning on this knowledge, we obtain the posterior distribution carried by the variables $P,H$ described above.  In terms of these variables, the MLM estimator $\hat q$ is simply the posterior mean for $q^*_{\mathrm{mid}}$ and the MLM credible interval $C_{x,y}$ is an interval which contains $q^*_{\mathrm{lo},x,y},q^*_{\mathrm{hi},x,y}$ with high probability.  
-
-In practice, we were not able to find a way to compute the credible interval and posterior means exactly.  It seems difficult to even sample the conditional random variables $P,H$.  Common approaches to this type of problem involve Markov-Chain Monte Carlo and Variational Inference, but we were unable to make these approaches work in practice.  It seems nontrivial to work with the condition $E(p,h)=0$ that formalizes the MLM assumption.  We instead take a somewhat na\"ive approach.  We start with $\tilde P,\tilde H$, which carry the distribution of $p^*,h^*$ conditioned on the observed data (but not conditioned on the fact that the MLM assumption holds).  We then simply project $\tilde H$ to the space of parameters which are consistent with the MLM assumption.  That is, we take $\hat H$ to be the solution of the minimization problem $\min_{h'}D(\tilde H|h')$, subject to the constraint that $E(\tilde P,h')=0$.  Optimization details can be found in Appendix \ref{sec:optproblems}.  We hope that the distribution of $\tilde P,\hat H$ will approximate the desired posterior $P,H$.  We then use samples from this distribution to compute what we need.  The implications of this approximation are difficult to reason about; we hope further study will clarify when this is a reasonable procedure.  In the mean time, we content ourselves that it is a practical solution to a difficult problem.
-
-A frequentist point of view might provide a valuable counterpoint to our Bayesian analysis.  However, we were unable to produce effective confidence intervals for the link parameters.  There are at least two difficulties: the link is unidentifiable and the true parameter values may lie on the edge of the parameter space.  These challenges make traditional appproaches based on asymptotic normality difficult to apply.  Perhaps future work could uncover a way to overcome these challenges.
+In practice, we were not able to find a way to compute the credible interval and posterior means exactly.  It seems difficult to even sample from the conditional distribution.  Common approaches to this type of problem involve Markov-Chain Monte Carlo and Variational Inference, but we were unable to make these approaches work in practice.  It seems nontrivial to work with the condition $G(p,h)=0$ that formalizes the MLM assumption.  We instead take a somewhat na\"ive approach.  We start by defining $\tilde P,\tilde H$ to carry the conditional distribution of $p^*,h^*$ given the observed data (but not conditioned on the fact that the MLM assumption holds).  We then simply project $\tilde H$ to the space of parameters which are consistent with the MLM assumption.  That is, we take $\hat H$ to be the solution of the minimization problem $\min_{h'}D(\tilde H|h')$, subject to the constraint that $E(\tilde P,h')=0$.  Optimization details can be found in Appendix \ref{sec:optproblems}.  We hope that the distribution of $\tilde P,\hat H$ will approximate the desired posterior.  We then use samples from this distribution to compute what we need.  We asymptotically expect that $\tilde P,\tilde H$ will nearly satisfy the MLM assumption in any case, so this approximation should not make a large difference.  However, we caution that the exact implications of the approximation are difficult to reason about.   In any case, it is a practical solution to a difficult problem.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                 _           
@@ -179,7 +188,7 @@ The validity of the Markov Link Method assumption for a given situation should b
 %                                                    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Simulations}
+\section{Mathematical Results and Simulations}
 
 \label{sec:simulations}
 
@@ -194,12 +203,15 @@ The validity of the Markov Link Method assumption for a given situation should b
 \caption{{\bf When can the MLM accurately estimate the link?} \label{fig:simI}  We use simulations to test the MLM.  In subfigure (a) we look at the error of the MLM link estimator in many different situations, varying the numbers of samples, sampling procedures, and the link parameters.  In each trial our `ground truth' link parameters picked uniformly at random from the parameter space.  The MLM estimator accurately recovers the ground truth from simulated data, as long as we have enough samples \emph{and} enough distinct sampling procedures.  In subfigure (b) we consider the MLM's credible intervals.  For a selection of trials we choose a random value of of $x,y$ and then compare the true link parameter $q^*(y|x)$ with the MLM interval $C_{x,y}$.  We show the interval (in black) centered around the ground truth (in red).  Since the link parameters lie in $[0,1]$, the interval is always contained within $\pm1$ of the ground truth (this larger region is shown in gray).  The intervals mostly contain the truth, and get narrower with more samples as long as there are enough distinct sampling procedures.   In subfigure (c) we focus on the case of exactly $4$ sampling procedures.  In this case it is only possible to get very accurate estimates if the link takes on a particular form.  If the link is independent (i.e.\ $X,Y$ are independent) or if the link is invertible and deterministic (e.g.\ $X=Y$) then we can determine what the link is.  However, if the truth is more complex, small numbers of sampling procedures may make it impossible to determine the true link; this issue is discussed in detail in Section \ref{sec:casestudies}.}
 }
 
-We used simulations to test the two parts of the MLM: the point estimators $\hat q(y|x)$ and credible intervals $C_{x,y}$.  We would ordinarily hope for two things:
+There are three desiderata we might hope the Markov Link Method estimators would achieve:
 \begin{description}
     \item[Estimator convergence] As we obtain more samples, $\hat q(y|x)$ should converge to the true link $q^*(y|x)$ for each $x,y$.
+    \item[Interval concentration] As we obtain more samples, the interval $C_{x,y}$ should get smaller. Asymptotically it should include nothing but the point $q^*(y|x)$.
     \item[Conservative coverage] $q^*(y|x) \in C_{x,y}$ with high probability.
 \end{description}
-Our simulations yielded good news and bad news.  The good news: the MLM generally achieves conservative coverage.  In many cases, the MLM also achieves estimator convergence.  The bad news: in many cases the MLM fails to achieve estimator convergence.  Indeed, we can show that the identifiability issues block any possibility of success in some cases; we detail this problem in Appendix \ref{sec:casestudies}.  The following two simulations give a good overview of the relevant issues:
+However, due to certain identifiability issues, it is only actually possible to guarantee the last desideratum.  In many cases, the MLM achieves all three.  However, we can show that identifiability issues block any possibility of success in some cases; we detail this problem in Appendix \ref{sec:casestudies}.  The good news is that even though the Markov Link Method credible intervals may not concentrate around the truth, they do as well as possible.  In particular, they do appear to converge around the quantities we can estimate, namely the $q_\mathrm{lo},q_\mathrm{hi}$ bounds described in Section \ref{sec:mlm}.  A precise  statement of what we have been able to prove may be found in Theorem \ref{thm:mainthm} of Appendix \ref{sec:casestudies}.
+
+The following two simulations give a good overview of the relevant issues:
 
 \begin{itemize}
     \item How does MLM performance depend on the number of samples and the number of sampling procedures?  We suppose we have two measurement procedures which return categorical measurements among six categories.  Thus the first procedure yields $X\in \{1,2,3,4,5,6\}$ and the second yields $Y\in \{1,2,3,4,5,6\}$.  To see how the method performs in different circumstances, we will run many trials.  In each trial we fix the number of sampling procedures and pick `ground truth' parameters uniformly at random from the parameter space.  We then simulate a dataset from these ground truth parameters, fixing the total number of samples (spreading these samples equally among all combinations of sampling procedure and measurement procedure).  Finally, we apply the MLM to the simulated data to get the point estimates $\tilde q(y|x)$ and the credible intervals $C_{x y}$.  We measure the overall estimator convergence using a kind of total variation distance:
@@ -282,11 +294,13 @@ It can be difficult to understand how two different measurement procedures are r
 
 In this paper we suggest one way to overcome these difficulties.  We formalize the `relationship' between two measurement procedures through the notion of a `measurement link.'  Given that we have measured a specimen with one procedure and obtained the outcome $x$, the link parameter $q(y|x)$ tells us the probability that we would obtain outcome $y$ if we measured the same specimen with the second procedure.  We present the Markov Link Method assumption, which roughly states that the link can be statistically isolated from the sampling procedures.  We provide the Markov Link Method (MLM) algorithm that uses this assumption to estimate the link and measure our uncertainty.  Code is published at https://github.com/jacksonloper/markov-link-method, including a tutorial-style ipython notebook detailing every computation made in this paper.
 
-The MLM appears to provide reasonable values in simulation and gives useful insight to real data.  Applied to neuronal cell-type data, the MLM clarified how two different cell-type classification systems are related.  We saw that some aspects of the two systems seem well-calibrated, but others we are less sure about.  The nature of the variability in the credible intervals suggested directions for experiments which would further refine our understanding.  
+The MLM appears gives provable guarantees, provides reasonable values in simulation, and gives useful insight to real data.  Applied to neuronal cell-type data, the MLM clarified how two different cell-type classification systems are related.  We saw that some aspects of the two systems seem well-calibrated, but others we are less sure about.  The nature of the variability in the credible intervals suggested directions for experiments which would further refine our understanding.  
 
 In future work, it would be interesting to use additional assumptions to help us estimate calibrations.  For example, as it stands the Markov Link Method will only yield narrow credible intervals if each measurement tool returns one of a finite number of measurement outcomes.  In some cases, we may believe that similar measurement values should have similar probabilities.  Such smoothness assumptions would make it possible to apply the MLM to measurement tools which can return a continuum of values.   
 
-More generally, it is clear that good assumptions can help us get real insight for tough problems. Even if these assumptions are not sufficient to allow us to perfectly identify our object of interest, credible regions can be constructed.  By probing these regions carefully, we can learn what the data actually has to say and what experiments will help us learn more.
+Another direction for future work would be to take a frequentist point of view.  An obvious direction would be to use profile likelihoods as statistics to define confidence intervals for the link parameters.  However, the distribution of these statistic is difficult to pin down.  Traditional techniques based on asymptotic normality may fail dramatically, because the true parameters may lie at the boundary of the parameter space.  In particular, there may be some $x,y$ for which $q^*(y|x)=0$.  Even approximate methods are difficult to apply because the parameter space can be quite high-dimensional.  Perhaps future work could uncover a way to overcome these challenges.
+
+It is clear that good assumptions can help us get real insight for tough problems. Even if these assumptions are not sufficient to allow us to perfectly identify our object of interest, we can bound our uncertainty.  By probing this uncertainty carefully, we can learn what the data actually has to say and what experiments will help us learn more.
 
 \bibliographystyle{unsrt}
 \bibliography{refs}
@@ -500,9 +514,11 @@ Let $\hat A$ denote the affine plane $\hat A=\{q:\ \sum_x \hat p(x|\ell)q(y|x)= 
 Now fix any $\hat p,\hat h$.  Now let $\tilde q$ be the orthogonal Euclidean projection of $q^*$ to the affine space $A$.  That is, $\tilde q$ is minimizes a sum-of-squares difference to $q^*$ among all the points in $A$.  The linearly independent rows of $B^*$ allow us to bound the spectral norm of the right-pseudoinverse of $\hat B_{\ell,x}=\hat p(x|\ell)$, by taking $\hat p$ sufficiently close to $p^*$.  If we furthermore require $\hat h$ sufficiently close to $h^*$, we can use this to ensure the projection distance is small.  That is, we can force $\tilde q$ to be arbitrarily close to $q^*$.  Using the fact that $q^*(y|x)>c$ we can thereby furthermore insure that $\tilde q(y|x)\geq0$.  Finally, it is straightforward to see that the projection leaves the constraint $\sum_y q(y|x)=1$ unchanged.  Thus $\tilde q\in \hat \Theta$ and $\tilde q$ is arbitrarily close to $q^*$. 
 \end{proof}
 
-This theorem is certainly a step in the right direction, but we emphasize that it does require some assumptions.  It is our opinion that the linear independence requirement is fairly mild (if it is not met then subpopulations can simply be merged together).  However, the positivity requirement is quite troubling.  In many cases of interest the true link $q^*$ has genuine zeros: pairs of measurements between the two tools which are fundamentally incompatible.  In this case such a theorem cannot be applied.  
+Since it is easy to find consistent estimators for $\hat p,\hat h$, this theorem suggests we can use those estimators to get good estimates for our uncertainty about $q^*$.  In particular, subject to the conditions of the theorem, we have that the bounds of $C_{x,y}$ converge to the bounds of what is identifiable about $q^*$.  It is certainly a step in the right direction, but we emphasize that the theorem's conditions are nontrivial.  It is our opinion that the linear independence condition is fairly mild (if it is not met then subpopulations can simply be merged together).  However, the positivity condition is quite troubling.  In many cases of interest the true link $q^*$ has genuine zeros: pairs of measurements between the two tools which are fundamentally incompatible.  In this case such a theorem cannot be applied.  
 
-However, it may be that the above theorem's requirement ($q(x|y)>c>0$) is much stronger than is necessary.  A precise understanding of the discontinuity example above has remained elusive.  Better understanding could lead to a much more accurate and practical estimates.  We leave it for future work.
+However, it may be that the above theorem's requirement ($q(x|y)>c>0$) is much stronger than is necessary.  A precise understanding of the discontinuity example above has remained elusive.  Better understanding could lead to more accurate estimates.  We leave it for future work.
+
+
 \end{document}
 
 

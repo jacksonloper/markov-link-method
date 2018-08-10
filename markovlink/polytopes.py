@@ -233,7 +233,7 @@ def scipy_linprog(c,A_eq,b_eq):
     else:
         raise Exception("Linear programming failed!")    
 
-def cvxopt_linprog(c,A_eq,b_eq,initialcondition,gaptol=1e-5,verbose=True):
+def cvxopt_linprog(c,A_eq,b_eq,initialcondition,gaptol=1e-5,verbose=False):
     '''
     minimize <c, x>
     subj to Ax = b
