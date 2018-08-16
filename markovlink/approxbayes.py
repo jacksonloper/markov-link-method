@@ -23,6 +23,25 @@ def posterior_samples(Nlx,Nly,nsamps=100,verbose=False,clipthresh=1e-6):
 
     return estimates
 
+def projection_check(Nlx,Nly,nsamps=100,verbose=False,clipthresh=1e-6):
+    estimates=[]
+    if verbose:
+        misc.pnn("\n %d samples to produce:"%nsamps)
+    for i in range(nsamps):
+        if verbose:
+            misc.pnn(i)
+        p=np.array([npr.dirichlet(x+1) for x in Nlx])
+        htilde=np.array([npr.dirichlet(x+1) for x in Nly])
+
+        qtilde=estimation.train_mlm_fixedp(htilde,p)
+
+        # get the central q, for uniqueness
+        q = polytopes.find_central(p,qtilde,clipthresh=1e-6)
+        
+        estimates.append((p,q,htilde))
+
+    return estimates
+
 
 def credible_interval(estimates,xtilde,ytilde,alpha=.05,verbose=False):
     lower,upper=get_extremes(estimates,xtilde,ytilde,verbose=verbose)
