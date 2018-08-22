@@ -181,6 +181,9 @@ def find_extremal(plx,qxy,c,use_cvxopt=True,precondition=False):
     c = np.require(c,dtype=np.float).ravel()
     assert c.shape[0]==np.prod(qxy.shape),"c should be the same shape as qxy"
     
+    if qxy.shape[0] <= plx.shape[0]: # <-- trivial polytope
+        return qxy
+
     # polytope can be defined by A_eq q = b_eq, q>=0:
     A_eq,b_eq = q_with_fixedph(plx,plx@qxy,precondition=precondition)
 
